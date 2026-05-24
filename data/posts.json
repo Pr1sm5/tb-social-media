@@ -1,0 +1,30 @@
+[
+  {
+    "postId": "1",
+    "userId": "4532",
+    "image": "image.png",
+    "content": "Hallo nr 3",
+    "timestamp": "2026-05-24T17:43:28.258Z"
+  },
+  {
+    "postId": "2",
+    "userId": "4532",
+    "image": "image.png",
+    "content": "Hallo nr 3",
+    "timestamp": "2026-05-24T17:48:16.888Z"
+  },
+  {
+    "postId": "2",
+    "userId": "4532",
+    "image": "image.png",
+    "content": "Hallo nr 3",
+    "timestamp": "2026-05-24T17:53:14.869Z"
+  },
+  {
+    "postId": "2",
+    "userId": "4532",
+    "image": "image.png",
+    "content": "Hallo nr 3",
+    "timestamp": "2026-05-24T17:53:27.425Z"
+  }
+]

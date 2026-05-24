@@ -1,4 +1,4 @@
-export interface Comment{
+export interface PostComment {
     postId: string
     commentId: string
     userId: string
