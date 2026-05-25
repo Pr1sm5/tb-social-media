@@ -2,6 +2,7 @@
 import { getPosts as loadPosts, savePost, savePosts } from "../data/dataManager";
 import {Post} from "@/lib/types/post";
 import {CreatePostInput} from "@/lib/types/post";
+import {randomUUID} from "node:crypto";
 
 const start = new Date().getTime()
 
@@ -15,18 +16,15 @@ const post : CreatePostInput = {
 
 export function getPosts(): Post[] {
     return loadPosts()
+        .sort(
+            (a, b) =>
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 }
 
 
 export function createPost(input : CreatePostInput): Post {
-    const posts = getPosts()
-
-    const maxId = posts.length
-        ? Math.max(...posts.map(p => Number(p.postId)))
-        : 0
-
     const post: Post = {
-        postId: (maxId + 1).toString(),
+        postId: randomUUID(),
         ...input,
         timestamp: new Date().toISOString(),
     }
@@ -70,3 +68,8 @@ export function deletePost(postId : string) {
 export function getFeed(){
 
 }
+console.log(createPost(post))
+console.log(getPosts())
+
+let end = new Date().getTime() - start
+console.log(end)
