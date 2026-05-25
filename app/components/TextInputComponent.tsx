@@ -22,12 +22,12 @@ export default function Texteingabefeld({
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Was passiert?"
+        placeholder="What's up?'"
         style={inputStyle}
       />
 
       <button onClick={handleSend} style={buttonStyle}>
-        Senden
+        Send
       </button>
     </div>
   );
@@ -36,27 +36,38 @@ export default function Texteingabefeld({
 //CSS
 const containerStyle: React.CSSProperties = {
   display: "flex",
-  gap: "10px",
-  justifyContent: "center",
-  marginTop: "20px",
+  alignItems: "center",
+
+  padding: "20px",
+
+  borderBottom: "1px solid #2f2f2f",
+
+  width: "100%",
 };
 
 const inputStyle: React.CSSProperties = {
-  padding: "12px 16px",
-  fontSize: "16px",
-  border: "2px solid #ccc",
-  borderRadius: "10px",
+  flex: 1,
+
+  background: "transparent",
+  color: "white",
+
+  border: "none",
+
+  fontSize: "20px",
+
   outline: "none",
-  width: "300px",
-  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
 };
 
 const buttonStyle: React.CSSProperties = {
-  padding: "12px 16px",
-  borderRadius: "10px",
+  padding: "10px 18px",
+
   border: "none",
-  cursor: "pointer",
+  borderRadius: "999px",
+
   backgroundColor: "#1d9bf0",
   color: "white",
+
   fontWeight: "bold",
+
+  cursor: "pointer",
 };
