@@ -5,17 +5,34 @@ import { useState } from "react";
 
 import Texteingabefeld from "./components/TextInputComponent";
 import TextOutputComponent from "./components/TextOutputComponent";
+import CommentComponent from "./components/CommentComponent";
 
 export default function Page() {
-  const [posts, setPosts] = useState<string[]>([]);
+    type Post = {
+    text: string;
+    comments: string[];
+  };
+
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [openComments, setOpenComments] = useState<number | null>(null);
 
   function addPost(text: string) {
-    setPosts([text, ...posts]);
-  }
+  setPosts([{ text, comments: [] }, ...posts]);
+}
 
   function deletePost(index: number) {
     setPosts(posts.filter((_, i) => i !== index));
   }
+
+  function addComment(index: number, text: string) {
+  setPosts((prev) =>
+    prev.map((p, i) =>
+      i === index
+        ? { ...p, comments: [text, ...p.comments] }
+        : p
+    )
+  );
+}
 
   return (
     <>
@@ -46,13 +63,27 @@ export default function Page() {
 
         <section>
           {posts.map((post, i) => (
-            <TextOutputComponent 
-              key={i} 
-              text={post}
-              name="Kinky"
-              username="Samed123"
-              onDelete={() => deletePost(i)}  
-            />
+            <div key={i}>
+              <div
+                onClick={() =>
+                  setOpenComments(openComments === i ? null : i)
+                }
+              >
+                <TextOutputComponent
+                  text={post.text}
+                  name="Kinky"
+                  username="Samed123"
+                  onDelete={() => deletePost(i)}
+                />
+              </div>
+
+              {openComments === i && (
+                <CommentComponent
+                  comments={post.comments}
+                  onAddComment={(text) => addComment(i, text)}
+                />
+              )}
+            </div>
           ))}
         </section>
        </div>
