@@ -30,7 +30,7 @@ function loadPosts(): Post[]{
     return JSON.parse(data || "[]")
 }
 
-function savePosts(posts: Post[]){
+export function savePosts(posts: Post[]){
    fs.writeFileSync(postsFilePath, JSON.stringify(posts, null, 2))
 }
 
@@ -52,7 +52,7 @@ function loadComments(): PostComment[]{
     return JSON.parse(data || "[]")
 }
 
-function saveComments(comments: PostComment[]){
+export function saveComments(comments: PostComment[]){
     fs.writeFileSync(commentsFilePath, JSON.stringify(comments, null, 2))
 }
 
@@ -66,10 +66,3 @@ export function saveComment(comment: PostComment){
     saveComments(comments)
 }
 
-//endregion
-
-
-savePost(post)
-saveComment(comment)
-console.log(getPosts())
-console.log(getComments())

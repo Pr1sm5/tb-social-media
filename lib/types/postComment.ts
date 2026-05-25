@@ -5,3 +5,9 @@ export interface PostComment {
     content: string
     timestamp: string
 }
+
+export interface CreateCommentInput {
+    postId: string
+    userId: string
+    content: string
+}

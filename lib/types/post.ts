@@ -5,3 +5,9 @@ export interface Post{
     content: string
     timestamp: string
 }
+
+export interface CreatePostInput{
+    userId: string
+    image: string
+    content: string
+}

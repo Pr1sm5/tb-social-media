@@ -12,5 +12,12 @@
     "userId": "DeineMudda",
     "content": "Das ist ein Kommentar",
     "timestamp": "2026-05-24T17:53:27.426Z"
+  },
+  {
+    "postId": "1",
+    "commentId": "1",
+    "userId": "DeineMudda",
+    "content": "Das ist ein Kommentar",
+    "timestamp": "2026-05-25T16:27:21.319Z"
   }
 ]
