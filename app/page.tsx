@@ -7,6 +7,7 @@ import Texteingabefeld from "./components/TextInputComponent";
 import TextOutputComponent from "./components/TextOutputComponent";
 import CommentComponent from "./components/CommentComponent";
 
+
 export default function Page() {
     type Post = {
     text: string;

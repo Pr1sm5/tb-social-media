@@ -6,22 +6,6 @@ const postsFilePath: string = "data/posts.json";
 const commentsFilePath: string = "data/comments.json";
 const botsFilePath: string = "data/bots.json";
 
-//TEST DATA!!!!
-const post: Post = {
-    postId: "2",
-    userId: "4532",
-    image: "image.png",
-    content: "Hallo nr 3",
-    timestamp: new Date().toISOString()
-}
-
-const comment: PostComment = {
-    postId: "1",
-    commentId: "1",
-    userId: "DeineMudda",
-    content: "Das ist ein Kommentar",
-    timestamp: new Date().toISOString()
-}
 
 //region POSTS
 
@@ -65,4 +49,5 @@ export function saveComment(comment: PostComment){
     comments.push(comment)
     saveComments(comments)
 }
+//endregion
 

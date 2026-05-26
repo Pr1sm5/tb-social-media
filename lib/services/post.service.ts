@@ -34,8 +34,8 @@ export function createPost(input : CreatePostInput): Post {
 }
 
 
-export function getPostById(id : number) : Post | undefined {
-    return getPosts().find( p => p.postId === id.toString())
+export function getPostById(id : string) : Post | undefined {
+    return getPosts().find( p => p.postId === id)
 }
 
 

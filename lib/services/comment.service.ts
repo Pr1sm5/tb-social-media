@@ -50,7 +50,7 @@ export function updateComment(commentId: string, update: {content: string}): Pos
 
 
 export function deleteComment(commentId: string){
-    const comments : PostComment[] = getComments()
+    const comments : PostComment[] = loadComments()
 
     const index :number = comments.findIndex(c => c.commentId === commentId)
     if (index === -1) return false
@@ -71,6 +71,3 @@ export function getCommentById(commentId: string): PostComment | null{
 
     return comment
 }
-
-console.log(createComment(comment))
-console.log(getCommentsByPostId("3"))
