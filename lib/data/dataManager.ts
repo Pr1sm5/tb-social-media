@@ -62,7 +62,7 @@ function loadComments(): PostComment[] {
 
     const data = fs.readFileSync(commentsFilePath, "utf-8");
 
-    console.log("COMMENTS RAW FILE:", data);
+    //console.log("COMMENTS RAW FILE:", data); //Bug fixing
 
     return data.trim()
         ? JSON.parse(data)
