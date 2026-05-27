@@ -130,9 +130,16 @@ export default function Page() {
 
         setOpenComments(postId);
 
-        // Nur laden wenn noch nicht vorhanden
         if (!comments[postId]) {
-            await fetchComments(postId);
+            const res = await fetch(`/api/posts/${postId}/comments`);
+            const data = await res.json();
+
+            if (data.success) {
+                setComments((prev) => ({
+                    ...prev,
+                    [postId]: data.data,
+                }));
+            }
         }
     }
 
