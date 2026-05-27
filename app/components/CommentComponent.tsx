@@ -16,8 +16,8 @@ export default function CommentComponent({
   return (
     <div style={containerStyle}>
       <div>
-        {comments.map((c, i) => (
-          <p key={i} style={commentStyle}>
+        {comments.map((c) => (
+          <p key={c.commentId} style={commentStyle}>
             💬 {c.content}
           </p>
         ))}

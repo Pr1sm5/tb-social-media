@@ -10,6 +10,7 @@ const comment: CreateCommentInput = {
 }
 
 
+
 export function createComment(input : CreateCommentInput): PostComment | null{
     const comment: PostComment = {
         postId: input.postId,
@@ -33,21 +34,27 @@ export function getCommentsByPostId(postId : string): PostComment[]{
 }
 
 
-export function updateComment(commentId: string, update: {content: string}): PostComment | null{
-    const index: number = loadComments()
-        .findIndex(c => c.commentId === commentId)
+export function updateComment(
+    commentId: string,
+    update: { content: string }
+): PostComment | null {
 
-    if (index === -1) return null
+    const comments = loadComments();
 
-    const comments = loadComments()
+    const index: number = comments.findIndex(
+        c => c.commentId === commentId
+    );
+
+    if (index === -1) return null;
+
     comments[index] = {
         ...comments[index],
-        content: update.content
-    }
+        content: update.content,
+    };
 
-    saveComments(comments)
+    saveComments(comments);
 
-    return comments[index]
+    return comments[index];
 }
 
 
