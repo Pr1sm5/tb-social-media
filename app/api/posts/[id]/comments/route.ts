@@ -11,6 +11,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
 // POST /api/posts/:id/comments
 export async function POST(req: Request, { params }: { params: { id: string } }) {
+    const {id} = await params
     const body = await req.json()
 
     if (!body.userId || !body.content) {
@@ -19,8 +20,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         )
     }
 
+
+    console.log(params.id)
+
     const comment = createComment({
-        postId: params.id,   // ← kommt aus der URL, nicht aus dem Body
+        postId: id,   // ← kommt aus der URL, nicht aus dem Body
         userId: body.userId,
         content: body.content
     })

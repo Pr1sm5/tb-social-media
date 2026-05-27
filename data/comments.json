@@ -1,58 +1,9 @@
 [
   {
-    "postId": "1",
-    "commentId": "1",
-    "userId": "DeineMudda",
-    "content": "Das ist ein Kommentar",
-    "timestamp": "2026-05-24T17:53:14.869Z"
-  },
-  {
-    "postId": "1",
-    "commentId": "1",
-    "userId": "DeineMudda",
-    "content": "Das ist ein Kommentar",
-    "timestamp": "2026-05-24T17:53:27.426Z"
-  },
-  {
-    "postId": "1",
-    "commentId": "1",
-    "userId": "DeineMudda",
-    "content": "Das ist ein Kommentar",
-    "timestamp": "2026-05-25T16:27:21.319Z"
-  },
-  {
-    "postId": "3",
-    "content": "Das ist ein Kommentar",
-    "userId": "AbbrecherMaxi",
-    "commentId": "50518507-0beb-4695-a014-38ed3ccb910c",
-    "timestamp": "2026-05-25T20:13:23.320Z"
-  },
-  {
-    "postId": "3",
-    "content": "Das ist ein Kommentar",
-    "userId": "AbbrecherMaxi",
-    "commentId": "604a2ca3-edc5-4205-972a-97ef88554411",
-    "timestamp": "2026-05-25T20:13:29.076Z"
-  },
-  {
-    "postId": "3",
-    "content": "Das ist ein Kommentar",
-    "userId": "AbbrecherMaxi",
-    "commentId": "acd825b9-e51b-4e08-a3a5-a4dcab05abf2",
-    "timestamp": "2026-05-25T20:13:34.020Z"
-  },
-  {
-    "postId": "3",
-    "content": "Das ist ein Kommentar",
-    "userId": "AbbrecherMaxi",
-    "commentId": "710277d0-b8ee-4cb4-83a1-6b503f479d58",
-    "timestamp": "2026-05-25T20:13:35.360Z"
-  },
-  {
-    "postId": "3",
-    "content": "Das ist ein Kommentar",
-    "userId": "AbbrecherMaxi",
-    "commentId": "9511cb6d-e74b-463c-9ef3-2f89899c6ccb",
-    "timestamp": "2026-05-25T20:13:49.431Z"
+    "postId": "0cfd9627-a13d-4b3f-bc81-1d241a48ea00",
+    "content": "E",
+    "userId": "123",
+    "commentId": "a3ee976a-53c2-4e3d-b2d1-373e6785a0f8",
+    "timestamp": "2026-05-27T08:58:52.323Z"
   }
 ]

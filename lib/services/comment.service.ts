@@ -12,9 +12,11 @@ const comment: CreateCommentInput = {
 
 export function createComment(input : CreateCommentInput): PostComment | null{
     const comment: PostComment = {
-        ...input,
+        postId: input.postId,
+        content: input.content,
+        userId: input.userId,
         commentId: randomUUID(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     }
 
     saveComment(comment)
@@ -37,7 +39,7 @@ export function updateComment(commentId: string, update: {content: string}): Pos
 
     if (index === -1) return null
 
-    const comments = getComments()
+    const comments = loadComments()
     comments[index] = {
         ...comments[index],
         content: update.content
