@@ -20,7 +20,7 @@ export interface Bot {
     systemPrompt: string;
 }
 
-// Response-Format aus botResponseFormat.json
+// Response-Format aus botFormat.json
 export interface BotResponse {
     botId: string;
     content: string;
