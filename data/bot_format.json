@@ -1,0 +1,5 @@
+{
+  "botId": "string",
+  "content": "string",
+  "botType": "supportive | toxic | misinformation"
+}
