@@ -5,6 +5,13 @@ type TextOutputProps = {
   onDelete: () => void;
 };
 
+import {
+  FaHeart,
+  FaRegHeart,
+  FaRegComment,
+  FaTrash
+} from "react-icons/fa";
+
 export default function TextOutputComponent({
   text,
   name,
@@ -12,23 +19,49 @@ export default function TextOutputComponent({
   onDelete,
 }: TextOutputProps) {
   return (
-    <div style={containerStyle}>
-      <div style={topRowStyle}>
-        <div style={avatarStyle}>👤</div>
+  <div style={containerStyle}>
+    
+    {/* TOP ROW */}
+    <div style={topRowStyle}>
+      <div style={avatarStyle}>👤</div>
 
-        <div style={userBlockStyle}>
-          <div style={nameStyle}>{name}</div>
-          <div style={handleStyle}>@{username}</div>
-        </div>
+      <div style={userBlockStyle}>
+        <div style={nameStyle}>{name}</div>
+        <div style={handleStyle}>@{username}</div>
       </div>
-
-      <p style={textStyle}>{text}</p>
-
-      <button onClick={onDelete} style={buttonStyle}>
-        Delete
-      </button>
     </div>
-  );
+
+    {/* TEXT */}
+    <p style={textStyle}>{text}</p>
+
+    {/* ACTIONS */}
+    <div style={actionsStyle}>
+      
+      {/* COMMENT */}
+      <button style={iconBtn}>
+        💬
+      </button>
+
+      {/* LIKE */}
+      <button style={iconBtn}>
+        ❤️
+      </button>
+
+      {/* DELETE */}
+      <button
+        style={iconBtn}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+      >
+        🗑
+      </button>
+
+    </div>
+
+  </div>
+);
 }
 
 const containerStyle: React.CSSProperties = {
@@ -86,4 +119,18 @@ const buttonStyle: React.CSSProperties = {
   background: "transparent",
   color: "#999",
   cursor: "pointer",
+};
+
+const actionsStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "20px",
+  marginTop: "10px",
+};
+
+const iconBtn: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  color: "#888",
+  cursor: "pointer",
+  fontSize: "16px",
 };

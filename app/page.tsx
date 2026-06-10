@@ -9,8 +9,13 @@ import CommentComponent from "./components/CommentComponent";
 
 import { Post, CreatePostInput } from "../lib/types/post";
 import {PostComment, CreateCommentInput} from "@/lib/types/postComment";
+import { useRouter } from "next/navigation";
+
+
 
 export default function Page() {
+    const router = useRouter();
+    
     const [posts, setPosts] = useState<Post[]>([]);
     const [comments, setComments] = useState<Record<string, PostComment[]>>({});
     const [openComments, setOpenComments] = useState<string | null>(null);
@@ -143,6 +148,28 @@ export default function Page() {
         }
     }
 
+    async function deleteComment(commentId: string) {
+        try {
+            const res = await fetch(`/api/posts/comments/${commentId}`, {
+                                method: "DELETE",
+                        });
+
+            console.log("STATUS:", res.status);
+
+            const text = await res.text();
+            console.log("RESPONSE:", text);
+
+            if (!res.ok) {
+                console.error("DELETE FAILED");
+                return;
+            }
+
+            // ...
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
     return (
         <>
             <header className="header">
@@ -176,7 +203,7 @@ export default function Page() {
                             <div key={post.postId}>
 
                                 <div
-                                    onClick={() => toggleComments(post.postId)}
+                                    onClick={() => router.push(`/post/${post.postId}`)}
                                 >
                                     <TextOutputComponent
                                         text={post.content}
@@ -192,6 +219,7 @@ export default function Page() {
                                         onAddComment={(text) =>
                                             addComment(post.postId, text)
                                         }
+                                        onDeleteComment={deleteComment}
                                     />
                                 )}
 

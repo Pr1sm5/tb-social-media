@@ -59,17 +59,22 @@ export function updateComment(
 
 
 export function deleteComment(commentId: string){
-    const comments : PostComment[] = loadComments()
+    const comments: PostComment[] = loadComments()
 
-    const index :number = comments.findIndex(c => c.commentId === commentId)
-    if (index === -1) return false
+    console.log("ALL COMMENTS:", comments.map(c => c.commentId))
+    console.log("DELETE ID:", commentId)
 
-    const deleted = comments[index]
+    const index = comments.findIndex(c => c.commentId === commentId)
+
+    if (index === -1) {
+        console.log("NOT FOUND")
+        return false
+    }
 
     comments.splice(index, 1)
     saveComments(comments)
 
-    return deleted
+    return true
 }
 
 export function getCommentById(commentId: string): PostComment | null{

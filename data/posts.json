@@ -1,29 +1,15 @@
 [
   {
+    "postId": "43406e69-d624-46f8-975e-45803536b837",
+    "userId": "SomeName",
+    "image": "null",
+    "content": "keine ahnung was hier los ist",
+    "timestamp": "2026-05-27T09:13:39.609Z"
+  },
+  {
     "postId": "0cfd9627-a13d-4b3f-bc81-1d241a48ea00",
     "userId": "123",
     "content": "Neuer Post",
     "timestamp": "2026-05-27T08:58:35.751Z"
-  },
-  {
-    "postId": "961bfb53-2b96-41c9-b2eb-400a00422c4f",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-27T09:02:51.018Z"
-  },
-  {
-    "postId": "14212970-681f-4399-9564-6fe474151d42",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-27T09:13:03.748Z"
-  },
-  {
-    "postId": "43406e69-d624-46f8-975e-45803536b837",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-27T09:13:39.609Z"
   }
 ]
