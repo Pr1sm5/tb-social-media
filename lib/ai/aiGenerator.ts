@@ -1,7 +1,8 @@
 // aiGenerator.ts
 // Liest Bot-Charaktere aus bots.json und gibt Antworten im Format von botResponseFormat.json zurück
 
-import bots from "./bots.json";
+import bots from "@/data/bots.json";
+import {Bot} from "@/lib/types/bot";
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const GEMINI_API_URL =
@@ -13,12 +14,6 @@ const GEMINI_API_URL =
 
 export type BotType = "supportive" | "toxic" | "misinformation";
 
-export interface Bot {
-    botId: string;
-    botType: BotType;
-    name: string;
-    systemPrompt: string;
-}
 
 // Response-Format aus botFormat.json
 export interface BotResponse {
