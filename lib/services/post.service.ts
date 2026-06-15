@@ -68,8 +68,4 @@ export function deletePost(postId : string) {
 export function getFeed(){
 
 }
-console.log(createPost(post))
-console.log(getPosts())
 
-let end = new Date().getTime() - start
-console.log(end)

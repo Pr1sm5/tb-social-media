@@ -10,11 +10,14 @@ const comment: CreateCommentInput = {
 }
 
 
+
 export function createComment(input : CreateCommentInput): PostComment | null{
     const comment: PostComment = {
-        ...input,
+        postId: input.postId,
+        content: input.content,
+        userId: input.userId,
         commentId: randomUUID(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     }
 
     saveComment(comment)
@@ -31,21 +34,27 @@ export function getCommentsByPostId(postId : string): PostComment[]{
 }
 
 
-export function updateComment(commentId: string, update: {content: string}): PostComment | null{
-    const index: number = loadComments()
-        .findIndex(c => c.commentId === commentId)
+export function updateComment(
+    commentId: string,
+    update: { content: string }
+): PostComment | null {
 
-    if (index === -1) return null
+    const comments = loadComments();
 
-    const comments = getComments()
+    const index: number = comments.findIndex(
+        c => c.commentId === commentId
+    );
+
+    if (index === -1) return null;
+
     comments[index] = {
         ...comments[index],
-        content: update.content
-    }
+        content: update.content,
+    };
 
-    saveComments(comments)
+    saveComments(comments);
 
-    return comments[index]
+    return comments[index];
 }
 
 

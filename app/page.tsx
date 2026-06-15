@@ -1,94 +1,206 @@
 "use client";
 
 import "./globals.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Texteingabefeld from "./components/TextInputComponent";
 import TextOutputComponent from "./components/TextOutputComponent";
 import CommentComponent from "./components/CommentComponent";
 
+import { Post, CreatePostInput } from "../lib/types/post";
+import {PostComment, CreateCommentInput} from "@/lib/types/postComment";
 
 export default function Page() {
-    type Post = {
-    text: string;
-    comments: string[];
-  };
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [comments, setComments] = useState<Record<string, PostComment[]>>({});
+    const [openComments, setOpenComments] = useState<string | null>(null);
 
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [openComments, setOpenComments] = useState<number | null>(null);
+    // POSTS LADEN
+    async function fetchPosts() {
+        try {
+            const res = await fetch("/api/posts");
+            const data = await res.json();
 
-  function addPost(text: string) {
-  setPosts([{ text, comments: [] }, ...posts]);
-}
+            if (data.success) {
+                setPosts(data.data);
+            }
+        } catch (err) {
+            console.error("Fehler beim Laden der Posts:", err);
+        }
+    }
 
-  function deletePost(index: number) {
-    setPosts(posts.filter((_, i) => i !== index));
-  }
+    // Beim ersten Render laden
+    useEffect(() => {
+        fetchPosts();
+    }, []);
 
-  function addComment(index: number, text: string) {
-  setPosts((prev) =>
-    prev.map((p, i) =>
-      i === index
-        ? { ...p, comments: [text, ...p.comments] }
-        : p
-    )
-  );
-}
+    // POST ERSTELLEN
+    async function addPost(content: string) {
+        try {
+            const res = await fetch("/api/posts", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    userId: "123", // später aus Auth/User holen
+                    content,
+                }),
+            });
 
-  return (
-    <>
-      <header className="header">
-        <div className="logo">
-          <h1>LOGO</h1>
-        </div>
+            const data = await res.json();
 
-        <div className="header-nav">
-          <button>For you</button>
-          <button>Following</button>
-        </div>
+            if (data.success) {
+                setPosts((prev) => [data.data, ...prev]);
+            }
+        } catch (err) {
+            console.error("Fehler beim Erstellen:", err);
+        }
+    }
 
-        <div className="search-container">
-          <input
-            type="text"
-            placeholder="Search"
-            className="searchbar"
-          />
-        </div>
-      </header>
+    // POST LÖSCHEN
+    async function deletePost(postId: string) {
+        try {
+            const res = await fetch(`/api/posts/${postId}`, {
+                method: "DELETE",
+            });
 
-      <main>
-       <div className="feed">
-           <section>
-          <Texteingabefeld onSend={addPost} />
-        </section>
+            const data = await res.json();
 
-        <section>
-          {posts.map((post, i) => (
-            <div key={i}>
-              <div
-                onClick={() =>
-                  setOpenComments(openComments === i ? null : i)
-                }
-              >
-                <TextOutputComponent
-                  text={post.text}
-                  name="Kinky"
-                  username="Samed123"
-                  onDelete={() => deletePost(i)}
-                />
-              </div>
+            if (data.success) {
+                setPosts((prev) =>
+                    prev.filter((post) => post.postId !== postId)
+                );
+            }
+        } catch (err) {
+            console.error("Fehler beim Löschen:", err);
+        }
+    }
 
-              {openComments === i && (
-                <CommentComponent
-                  comments={post.comments}
-                  onAddComment={(text) => addComment(i, text)}
-                />
-              )}
-            </div>
-          ))}
-        </section>
-       </div>
-      </main>
-    </>
-  );
+    // COMMENTS LADEN
+    async function fetchComments(postId: string) {
+        try {
+            const res = await fetch(`/api/posts/${postId}/comments`);
+            const data = await res.json();
+
+            if (data.success) {
+                setComments((prev) => ({
+                    ...prev,
+                    [postId]: data.data,
+                }));
+            }
+        } catch (err) {
+            console.error("Fehler beim Laden der Kommentare:", err);
+        }
+    }
+
+    // COMMENT HINZUFÜGEN
+    async function addComment(postId: string, content: string) {
+        try {
+            const res = await fetch(`/api/posts/${postId}/comments`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    userId: "123",
+                    content,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                setComments((prev) => ({
+                    ...prev,
+                    [postId]: [data.data, ...(prev[postId] || [])],
+                }));
+            }
+        } catch (err) {
+            console.error("Fehler beim Kommentieren:", err);
+        }
+    }
+
+    // COMMENTS TOGGLE
+    async function toggleComments(postId: string) {
+        if (openComments === postId) {
+            setOpenComments(null);
+            return;
+        }
+
+        setOpenComments(postId);
+
+        if (!comments[postId]) {
+            const res = await fetch(`/api/posts/${postId}/comments`);
+            const data = await res.json();
+
+            if (data.success) {
+                setComments((prev) => ({
+                    ...prev,
+                    [postId]: data.data,
+                }));
+            }
+        }
+    }
+
+    return (
+        <>
+            <header className="header">
+                <div className="logo">
+                    <h1>LOGO</h1>
+                </div>
+
+                <div className="header-nav">
+                    <button>For you</button>
+                    <button>Following</button>
+                </div>
+
+                <div className="search-container">
+                    <input
+                        type="text"
+                        placeholder="Search"
+                        className="searchbar"
+                    />
+                </div>
+            </header>
+
+            <main>
+                <div className="feed">
+
+                    <section>
+                        <Texteingabefeld onSend={addPost} />
+                    </section>
+
+                    <section>
+                        {posts.map((post) => (
+                            <div key={post.postId}>
+
+                                <div
+                                    onClick={() => toggleComments(post.postId)}
+                                >
+                                    <TextOutputComponent
+                                        text={post.content}
+                                        name="Kinky"
+                                        username="Samed123"
+                                        onDelete={() => deletePost(post.postId)}
+                                    />
+                                </div>
+
+                                {openComments === post.postId && (
+                                    <CommentComponent
+                                        comments={comments[post.postId] || []}
+                                        onAddComment={(text) =>
+                                            addComment(post.postId, text)
+                                        }
+                                    />
+                                )}
+
+                            </div>
+                        ))}
+                    </section>
+
+                </div>
+            </main>
+        </>
+    );
 }

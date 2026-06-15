@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
+import {PostComment} from "@/lib/types/postComment";
 
 type CommentProps = {
-  comments: string[];
+  comments: PostComment[];
   onAddComment: (text: string) => void;
 };
 
@@ -15,9 +16,9 @@ export default function CommentComponent({
   return (
     <div style={containerStyle}>
       <div>
-        {comments.map((c, i) => (
-          <p key={i} style={commentStyle}>
-            💬 {c}
+        {comments.map((c) => (
+          <p key={c.commentId} style={commentStyle}>
+            💬 {c.content}
           </p>
         ))}
       </div>

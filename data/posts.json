@@ -1,72 +1,29 @@
 [
   {
-    "postId": "2",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "League meine eier",
-    "timestamp": "2026-05-25T16:31:15.810Z"
+    "postId": "0cfd9627-a13d-4b3f-bc81-1d241a48ea00",
+    "userId": "123",
+    "content": "Neuer Post",
+    "timestamp": "2026-05-27T08:58:35.751Z"
   },
   {
-    "postId": "3",
+    "postId": "961bfb53-2b96-41c9-b2eb-400a00422c4f",
     "userId": "SomeName",
     "image": "null",
     "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-25T16:31:40.446Z"
+    "timestamp": "2026-05-27T09:02:51.018Z"
   },
   {
-    "postId": "5",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "League meine eier",
-    "timestamp": "2026-05-25T16:31:56.941Z"
-  },
-  {
-    "postId": "6",
+    "postId": "14212970-681f-4399-9564-6fe474151d42",
     "userId": "SomeName",
     "image": "null",
     "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-25T16:32:07.334Z"
+    "timestamp": "2026-05-27T09:13:03.748Z"
   },
   {
-    "postId": "7",
+    "postId": "43406e69-d624-46f8-975e-45803536b837",
     "userId": "SomeName",
     "image": "null",
     "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-25T16:33:27.571Z"
-  },
-  {
-    "postId": "8",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-25T16:36:19.738Z"
-  },
-  {
-    "postId": "d3f758cc-768f-4941-a731-599561679a0f",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-25T19:42:40.477Z"
-  },
-  {
-    "postId": "c305f59e-fcdc-408f-bed7-880f9cb17e48",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-25T19:44:01.078Z"
-  },
-  {
-    "postId": "93accfd2-460a-4d77-b4cb-f718f32fb26c",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-26T11:35:31.113Z"
-  },
-  {
-    "postId": "fed00a1d-1948-4587-8a7a-6b1b74a61b34",
-    "userId": "SomeName",
-    "image": "null",
-    "content": "Ich ficke deine mamamamama",
-    "timestamp": "2026-05-26T11:36:40.706Z"
+    "timestamp": "2026-05-27T09:13:39.609Z"
   }
 ]
