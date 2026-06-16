@@ -23,6 +23,33 @@ export default function PostPage() {
         loadData(id);
     }, [id]);
 
+    useEffect(() => {
+        if (!id) return;
+
+        loadData(id);
+
+        const interval = setInterval(() => {
+            loadComments(id);
+        }, 10000); // 10 Sekunden
+
+        return () => clearInterval(interval);
+    }, [id]);
+
+    async function loadComments(postId: string) {
+        try {
+            const response = await fetch(`/api/posts/${postId}/comments`);
+            const data = await response.json();
+
+            if (data.success) {
+                setComments(data.data);
+            }
+        } catch (err) {
+            console.error("ERROR loading comments:", err);
+        }
+    }
+
+    
+
     async function loadData(postId: string) {
         setLoading(true);
 
