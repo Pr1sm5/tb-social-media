@@ -6,7 +6,7 @@ import {randomUUID} from "node:crypto";
 const comment: CreateCommentInput = {
     postId: "3",
     content: "Das ist ein Kommentar",
-    userId: "AbbrecherMaxi"
+    userId: "WeebMaxi"
 }
 
 
