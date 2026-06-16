@@ -6,7 +6,8 @@ import {randomUUID} from "node:crypto";
 const comment: CreateCommentInput = {
     postId: "3",
     content: "Das ist ein Kommentar",
-    userId: "AbbrecherMaxi"
+    userId: "AbbrecherMaxi",
+    isBot: true
 }
 
 
@@ -18,6 +19,8 @@ export function createComment(input : CreateCommentInput): PostComment | null{
         userId: input.userId,
         commentId: randomUUID(),
         timestamp: new Date().toISOString(),
+        isBot : input.isBot,
+        botType : input.botType
     }
 
     saveComment(comment)
