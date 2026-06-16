@@ -2,8 +2,9 @@
 import { NextResponse } from "next/server";
 import { CreatePostInput } from "@/lib/types/post";
 import { getPosts, createPost } from "@/lib/services/post.service";
-import {getAllBotComments, getSingleBotComment} from "@/lib/ai/aiGenerator";
+import {getAllBotComments, getRandomSingleBot, getSingleBotComment} from "@/lib/ai/aiGenerator";
 import { createComment } from "@/lib/services/comment.service";
+import {getRandomBot} from "@/lib/services/bots.service";
 
 // GET app/api/posts
 export async function GET() {
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
     // 2. Bots generieren Kommentare (3–5 Stück)
     let botComments = [];
     try {
-        const generated = await getSingleBotComment(post, "alex");
+        const generated = await getAllBotComments(post);
 
     } catch (error) {
         console.error("Bot-Generierung fehlgeschlagen:", error);

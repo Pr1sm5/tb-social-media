@@ -25,7 +25,7 @@ export function getRandomBotByType(botType : string) : Bot | undefined{
 }
 
 
-export function getRandomBot() : Bot | undefined{
+export function getRandomBot() : Bot{
     const data = getBots()
 
     const randomIndex = Math.floor(Math.random() * data.length)
