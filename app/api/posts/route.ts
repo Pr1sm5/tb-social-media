@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     // 2. Bots generieren Kommentare (3–5 Stück)
     let botComments = [];
     try {
-        const generated = await getAllBotComments(post);
+        const generated = getAllBotComments(post);
 
     } catch (error) {
         console.error("Bot-Generierung fehlgeschlagen:", error);
@@ -38,7 +38,6 @@ export async function POST(req: Request) {
     // 4. Post + gespeicherte Bot-Kommentare zurückgeben
     return NextResponse.json({
         success: true,
-        data: post,
-        botComments, // [{ commentId, postId, userId, content, timestamp }, ...]
+        data: post
     });
 }
