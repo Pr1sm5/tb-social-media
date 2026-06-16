@@ -11,5 +11,11 @@
     "userId": "123",
     "content": "Neuer Post",
     "timestamp": "2026-05-27T08:58:35.751Z"
+  },
+  {
+    "postId": "9c7bfaac-bdcb-475d-8d46-0cadf9c1ccc5",
+    "userId": "123",
+    "content": "Ich hasse Döner",
+    "timestamp": "2026-06-16T12:43:06.024Z"
   }
 ]
