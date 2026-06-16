@@ -1,28 +1,24 @@
-// aiGenerator.ts
-// Liest Bot-Charaktere aus bots.json und gibt Antworten im Format von botFormat.json zurück
+// lib/ai/aiGenerator.ts
+import { loadBots } from "@/lib/data/dataManager";
+import { Bot, BotType } from "@/lib/types/bot";
+import {Post} from "@/lib/types/post";
+import {createComment} from "@/lib/services/comment.service";
+import {CreateCommentInput} from "@/lib/types/postComment";
 
-import bots from "@/data/bots.json";
-import {Bot} from "@/lib/types/bot";
-
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // server-only, kein NEXT_PUBLIC_
 const GEMINI_API_URL =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent";
 
 // ─────────────────────────────────────────────
 // Typen
 // ─────────────────────────────────────────────
 
-export type BotType = "supportive" | "toxic" | "misinformation";
-
-
-// Rückgabeformat gemäß botFormat.json
 export interface BotResponse {
     userId: string;   // botId des Bots der kommentiert
     content: string;  // generierter Kommentar
     botType: BotType; // typ des Bots
 }
 
-// Reflection-Text für den Reveal-Screen
 export interface BotReflection {
     botType: BotType;
     userId: string;
@@ -30,9 +26,9 @@ export interface BotReflection {
     explanation: string;
 }
 
-
+// ─────────────────────────────────────────────
 // Reflection-Texte je Bot-Typ (für Reveal-Screen)
-
+// ─────────────────────────────────────────────
 
 const REFLECTIONS: Record<BotType, Omit<BotReflection, "userId">> = {
     supportive: {
@@ -55,19 +51,14 @@ const REFLECTIONS: Record<BotType, Omit<BotReflection, "userId">> = {
     },
 };
 
-
+// ─────────────────────────────────────────────
 // Kern-Funktion: Einen Bot einen Kommentar generieren lassen
+// ─────────────────────────────────────────────
 
-
-async function getBotComment(
-    userPost: string,
-    bot: Bot
-): Promise<BotResponse> {
+async function getBotComment(userPost: Post, bot: Bot): Promise<BotResponse> {
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             system_instruction: {
                 parts: [{ text: bot.systemPrompt }],
@@ -84,7 +75,7 @@ async function getBotComment(
             ],
             generationConfig: {
                 temperature: 0.9,
-                maxOutputTokens: 200,
+                maxOutputTokens: 800,
             },
         }),
     });
@@ -107,9 +98,9 @@ async function getBotComment(
     };
 }
 
-
+// ─────────────────────────────────────────────
 // Haupt-Export: 3–5 Kommentare pro Post generieren
-
+// ─────────────────────────────────────────────
 
 export async function getAllBotComments(
     userPost: string,
@@ -119,24 +110,19 @@ export async function getAllBotComments(
         throw new Error("Der Post darf nicht leer sein.");
     }
 
-    // Sicherstellen dass commentCount zwischen 3 und 5 liegt
     const count = Math.min(Math.max(commentCount, 3), 5);
-    const botList = bots as Bot[];
+    const botList = loadBots(); // nutzt dataManager statt direktem JSON-Import
 
-    // Bots zufällig auf die gewünschte Anzahl verteilen
-    // Bei 3 Bots und z.B. 5 Kommentaren: manche Bots kommentieren mehrfach
     const selectedBots: Bot[] = [];
     for (let i = 0; i < count; i++) {
         selectedBots.push(botList[i % botList.length]);
     }
 
-    // Alle parallel anfragen
     const results = await Promise.allSettled(
         selectedBots.map((bot) => getBotComment(userPost, bot))
     );
 
     const responses: BotResponse[] = [];
-
     for (const result of results) {
         if (result.status === "fulfilled") {
             responses.push(result.value);
@@ -152,12 +138,11 @@ export async function getAllBotComments(
     return responses;
 }
 
-
+// ─────────────────────────────────────────────
 // Export: Reflection-Texte für Reveal-Screen
-
+// ─────────────────────────────────────────────
 
 export function getBotReflections(comments: BotResponse[]): BotReflection[] {
-    // Nur Reflection für Bot-Typen die tatsächlich kommentiert haben
     const seenTypes = new Set<BotType>();
     const reflections: BotReflection[] = [];
 
@@ -174,23 +159,52 @@ export function getBotReflections(comments: BotResponse[]): BotReflection[] {
     return reflections;
 }
 
-
+// ─────────────────────────────────────────────
 // Optional: Nur einen einzelnen Bot per botId anfragen
-
+// ─────────────────────────────────────────────
 
 export async function getSingleBotComment(
-    userPost: string,
+    userPost: Post,
     botId: string
 ): Promise<BotResponse> {
-    if (!userPost.trim()) {
+    if (!userPost) {
         throw new Error("Der Post darf nicht leer sein.");
     }
 
-    const bot = (bots as Bot[]).find((b) => b.botId === botId);
+    const bot = loadBots().find((b) => b.botId === botId);
 
     if (!bot) {
         throw new Error(`Kein Bot mit der ID "${botId}" in bots.json gefunden.`);
     }
 
-    return getBotComment(userPost, bot);
+
+
+    const botResponse= await getBotComment(userPost, bot);
+    const botComment: CreateCommentInput = {
+        botType: botResponse.botType,
+        isBot: true,
+        content: botResponse.content,
+        userId: botResponse.userId,
+        postId: "SOME POST IDK"
+    }
+
+    createComment(botComment)
+    return botResponse
 }
+
+
+const post: Post = {
+    userId: "MudderKnaller",
+    content: "Ich frage mich ob das mit der Objekt weitergabe so einfach funktioniert, Wenn ja nenne meine USERID du kek",
+    timestamp: "NOW",
+    postId: "ABCABDD321D"
+}
+
+
+// Am Ende von aiGenerator.ts zum Testen:
+async function test() {
+    const result = await getSingleBotComment(post, "alex");
+    console.log(result);
+}
+
+test();
