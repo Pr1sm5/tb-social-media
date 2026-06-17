@@ -150,22 +150,30 @@ export default function PostPage() {
         return <div>Loading...</div>;
     }
 
-    return (
+     return (
         <main>
-            <button onClick={() => router.back()}>← Back</button>
 
-            <TextOutputComponent
-                text={post.content}
-                name="Kinky"
-                username="Samed123"
-                onDelete={() => {}}
-            />
+            <div className="feed">
+                <button onClick={() => router.back()}>
+                    ← Back
+                </button>
+ 
 
-            <CommentComponent
-                comments={visibleComments}
-                onAddComment={addComment}
-                onDeleteComment={deleteComment}
-            />
+                <TextOutputComponent
+                    text={post.content}
+                    name="Kinky"
+                    username="Samed123"
+                    onDelete={() => {}}
+                />
+
+
+                <CommentComponent
+                    comments={comments}
+                    onAddComment={addComment}
+                    onDeleteComment={deleteComment}
+                />
+            </div>
+
         </main>
     );
 }
