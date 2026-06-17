@@ -1,7 +1,7 @@
 "use client";
 
 import { PostComment } from "@/lib/types/postComment";
-import { FaHeart, FaRegHeart, FaRegComment, FaTrash } from "react-icons/fa";
+import { FaHeart, FaRegHeart, FaRegComment, FaTrash } from 'react-icons/fa';
 import { useState } from "react";
 
 type Props = {
@@ -18,7 +18,7 @@ export default function CommentCard({ comment, onDelete }: Props) {
                 <div style={avatar}>👤</div>
 
                 <div>
-                    <div style={name}>User</div>
+                    <div style={name}>@{comment.userId}</div>
                     <div style={handle}>@{comment.userId}</div>
                 </div>
             </div>

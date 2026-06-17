@@ -1,13 +1,7 @@
 "use client";
-import { useState } from "react";
-import {PostComment} from "@/lib/types/postComment";
 
-import {
-  FaHeart,
-  FaRegHeart,
-  FaRegComment,
-  FaTrash
-} from "react-icons/fa";
+import { useState } from "react";
+import { PostComment } from "@/lib/types/postComment";
 
 type CommentProps = {
   comments: PostComment[];
@@ -15,90 +9,60 @@ type CommentProps = {
   onDeleteComment: (commentId: string) => void;
 };
 
-export default function CommentComponent({
-  comments,
-  onAddComment,
-  onDeleteComment,
-}: CommentProps) {
+export default function CommentComponent({ comments, onAddComment, onDeleteComment }: CommentProps) {
   const [input, setInput] = useState("");
 
-  
-
   return (
-    <div style={containerStyle}>
-      <div>
-        {comments
-  .filter(Boolean)
-  .map((c) => (
-    <div key={c.commentId} style={commentCard}>
-      
-      <div style={topRow}>
-        <div style={avatar}>👤</div>
+      <div style={containerStyle}>
 
         <div>
-          <div style={name}>User</div>
-          <div style={handle}>@{c.userId}</div>
+          {comments.filter(Boolean).map((c) => (
+              <div key={c.commentId} style={commentCard} className="comment-card comment-appear">
+
+                <div style={topRow}>
+                  <div style={avatar} className="avatar">👤</div>
+                  <div>
+                    <div style={name}>{c.userId}</div>
+                    <div style={handle}>{c.userId}</div>
+                  </div>
+                </div>
+
+                <p style={text}>{c.content}</p>
+
+                <div style={actionsStyle}>
+                  <button className="icon-btn comment" onClick={(e) => e.stopPropagation()}>💬</button>
+                  <button className="icon-btn like"    onClick={(e) => e.stopPropagation()}>❤️</button>
+                  <button
+                      className="icon-btn delete"
+                      onClick={(e) => { e.stopPropagation(); onDeleteComment(c.commentId); }}
+                  >
+                    🗑
+                  </button>
+                </div>
+
+              </div>
+          ))}
         </div>
+
+        <div style={inputRowStyle}>
+          <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && input.trim() && (onAddComment(input), setInput(""))}
+              placeholder="Write a comment..."
+              style={inputStyle}
+              className="text-input"
+          />
+          <button
+              className="send-btn"
+              style={{ padding: "8px 14px", fontSize: "14px" }}
+              onClick={() => { if (!input.trim()) return; onAddComment(input); setInput(""); }}
+          >
+            Post
+          </button>
+        </div>
+
       </div>
-
-      <p style={text}>{c.content}</p>
-
-      <div style={actionsStyle}>
-
-  {/* COMMENT */}
-  <button
-    style={actionBtn}
-    onClick={(e) => e.stopPropagation()}
-  >
-    💬
-  </button>
-
-  {/* LIKE */}
-  <button
-    style={actionBtn}
-    onClick={(e) => e.stopPropagation()}
-  >
-    ❤️
-  </button>
-
-  {/* DELETE */}
-  <button
-    style={actionBtn}
-    onClick={(e) => {
-      e.stopPropagation();
-      onDeleteComment(c.commentId);
-    }}
->
-    🗑
-  </button>
-
-</div>
-
-    </div>
-  ))
-}
-      </div>
-
-      <div style={inputRowStyle}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Write a comment..."
-          style={inputStyle}
-        />
-
-        <button
-          onClick={() => {
-            if (!input.trim()) return;
-            onAddComment(input);
-            setInput("");
-          }}
-          style={buttonStyle}
-        >
-          Post
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -109,15 +73,10 @@ const containerStyle: React.CSSProperties = {
   gap: "10px",
 };
 
-const commentStyle: React.CSSProperties = {
-  color: "#bbb",
-  fontSize: "14px",
-  margin: "4px 0",
-};
-
 const inputRowStyle: React.CSSProperties = {
   display: "flex",
   gap: "8px",
+  padding: "8px 12px",
 };
 
 const inputStyle: React.CSSProperties = {
@@ -127,21 +86,6 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid #333",
   color: "white",
   borderRadius: "8px",
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  background: "#222",
-  color: "white",
-  border: "1px solid #444",
-  borderRadius: "8px",
-  cursor: "pointer",
-};
-
-const actionsRowStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "20px",
-  marginTop: "5px",
 };
 
 const commentCard: React.CSSProperties = {
@@ -169,30 +113,12 @@ const avatar: React.CSSProperties = {
   justifyContent: "center",
 };
 
-const name: React.CSSProperties = {
-  fontWeight: 600,
-  color: "white",
-};
-
-const handle: React.CSSProperties = {
-  fontSize: "12px",
-  color: "#888",
-};
-
-const text: React.CSSProperties = {
-  color: "#ddd",
-  margin: 0,
-};
+const name: React.CSSProperties = { fontWeight: 600, color: "white" };
+const handle: React.CSSProperties = { fontSize: "12px", color: "#888" };
+const text: React.CSSProperties   = { color: "#ddd", margin: 0 };
 
 const actionsStyle: React.CSSProperties = {
   display: "flex",
-  gap: "20px",
+  gap: "4px",
   marginTop: "5px",
-};
-
-const actionBtn: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  color: "#888",
-  cursor: "pointer",
 };

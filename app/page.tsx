@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 
 export default function Page() {
     const router = useRouter();
-    
+
     const [posts, setPosts] = useState<Post[]>([]);
     const [comments, setComments] = useState<Record<string, PostComment[]>>({});
     const [openComments, setOpenComments] = useState<string | null>(null);
@@ -207,7 +207,7 @@ export default function Page() {
                                 >
                                     <TextOutputComponent
                                         text={post.content}
-                                        name="Kinky"
+                                        name="YaPriSLaiOs"
                                         username="Samed123"
                                         onDelete={() => deletePost(post.postId)}
                                     />

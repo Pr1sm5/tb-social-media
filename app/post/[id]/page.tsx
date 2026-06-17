@@ -7,11 +7,37 @@ import TextOutputComponent from "@/app/components/TextOutputComponent";
 import CommentComponent from "@/app/components/CommentComponent";
 import { useParams, useRouter } from "next/navigation";
 
-const COMMENT_REVEAL_INTERVAL_MS = 2500;
-const NEW_POST_THRESHOLD_MS = 30_000; // Post gilt als "neu" wenn jünger als 30 Sekunden
+const NEW_POST_THRESHOLD_MS = 30_000;
 
 function isNewPost(timestamp: string): boolean {
     return Date.now() - new Date(timestamp).getTime() < NEW_POST_THRESHOLD_MS;
+}
+
+// Zufällige Delays — manchmal schnell hintereinander, manchmal längere Pause
+function generateRevealDelays(count: number): number[] {
+    const delays: number[] = [];
+    let accumulated = 0;
+
+    for (let i = 0; i < count; i++) {
+        const roll = Math.random();
+        let gap: number;
+
+        if (roll < 0.2) {
+            // 20%: sehr schnell (0.3–0.9s) — "zwei auf einmal" Effekt
+            gap = 300 + Math.random() * 600;
+        } else if (roll < 0.6) {
+            // 40%: normale Pause (1.5–4s)
+            gap = 1500 + Math.random() * 2500;
+        } else {
+            // 40%: längere Pause (4–9s)
+            gap = 4000 + Math.random() * 5000;
+        }
+
+        accumulated += gap;
+        delays.push(accumulated);
+    }
+
+    return delays;
 }
 
 export default function PostPage() {
@@ -32,7 +58,7 @@ export default function PostPage() {
     useEffect(() => {
         if (comments.length === 0) return;
 
-        // Alter Post → alle Kommentare sofort anzeigen
+        // Alter Post → alle sofort anzeigen
         if (!post || !isNewPost(post.timestamp)) {
             setVisibleComments(
                 [...comments].sort(
@@ -44,12 +70,14 @@ export default function PostPage() {
             return;
         }
 
-        // Neuer Post → neue Kommentare verzögert einblenden
+        // Neuer Post → neue Kommentare mit zufälligen Delays einblenden
         setVisibleComments((prev) => {
             const visibleIds = new Set(prev.map((c) => c.commentId));
             const toReveal = comments.filter((c) => !visibleIds.has(c.commentId));
 
             if (toReveal.length === 0) return prev;
+
+            const delays = generateRevealDelays(toReveal.length);
 
             toReveal.forEach((comment, index) => {
                 setTimeout(() => {
@@ -63,7 +91,7 @@ export default function PostPage() {
                                 new Date(b.timestamp).getTime()
                         );
                     });
-                }, (index + 1) * COMMENT_REVEAL_INTERVAL_MS);
+                }, delays[index]);
             });
 
             return prev;
@@ -150,14 +178,12 @@ export default function PostPage() {
         return <div>Loading...</div>;
     }
 
-     return (
+    return (
         <main>
-
             <div className="feed">
-                <button onClick={() => router.back()}>
+                <button className="back-btn" onClick={() => router.back()}>
                     ← Back
                 </button>
- 
 
                 <TextOutputComponent
                     text={post.content}
@@ -166,14 +192,12 @@ export default function PostPage() {
                     onDelete={() => {}}
                 />
 
-
                 <CommentComponent
-                    comments={comments}
+                    comments={visibleComments}
                     onAddComment={addComment}
                     onDeleteComment={deleteComment}
                 />
             </div>
-
         </main>
     );
 }
