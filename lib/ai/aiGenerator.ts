@@ -81,6 +81,7 @@ function extractJSON(raw: string): string {
     const end = cleaned.lastIndexOf("]");
 
     if (start === -1 || end === -1 || end < start) {
+        console.error("Gemini Rohantwort (kein JSON gefunden):\n", raw);
         throw new Error("Kein gültiges JSON-Array in Gemini-Antwort gefunden.");
     }
 
@@ -93,8 +94,16 @@ function parseRetryDelay(errorMessage: string): number | null {
     return Math.ceil(parseFloat(match[1])) * 1000 + 1000;
 }
 
+// Prüft ob Gemini die Antwort aus Safety-Gründen blockiert hat
+function isSafetyBlocked(data: any): boolean {
+    const candidate = data?.candidates?.[0];
+    if (!candidate) return true;
+    const reason = candidate?.finishReason;
+    return reason === "SAFETY" || reason === "RECITATION" || reason === "OTHER";
+}
+
 async function callGemini(prompt: string, retryCount = 0): Promise<string> {
-    const MAX_RETRIES = 2;
+    const MAX_RETRIES = 3;
 
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
         method: "POST",
@@ -102,8 +111,8 @@ async function callGemini(prompt: string, retryCount = 0): Promise<string> {
         body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: {
-                temperature: 1.2,
-                maxOutputTokens: 2048,
+                temperature: 1.0, // von 1.2 auf 1.0 — stabiler ohne viel Kreativität zu verlieren
+                maxOutputTokens: 4096,
             },
         }),
     });
@@ -112,10 +121,11 @@ async function callGemini(prompt: string, retryCount = 0): Promise<string> {
         const error = await response.json();
         const message: string = error?.error?.message ?? response.statusText;
 
+        // Rate-Limit → warten und nochmal versuchen
         if (response.status === 429 && retryCount < MAX_RETRIES) {
             const delay = parseRetryDelay(message);
             if (delay) {
-                console.warn(`Gemini Rate-Limit erreicht. Warte ${delay / 1000}s... (Versuch ${retryCount + 1}/${MAX_RETRIES})`);
+                console.warn(`Gemini Rate-Limit. Warte ${delay / 1000}s... (Versuch ${retryCount + 1}/${MAX_RETRIES})`);
                 await new Promise((resolve) => setTimeout(resolve, delay));
                 return callGemini(prompt, retryCount + 1);
             }
@@ -125,27 +135,70 @@ async function callGemini(prompt: string, retryCount = 0): Promise<string> {
     }
 
     const data = await response.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+    // Safety-Filter abfangen
+    if (isSafetyBlocked(data)) {
+        console.warn(`Gemini Safety-Block (Versuch ${retryCount + 1}/${MAX_RETRIES}). finishReason:`, data?.candidates?.[0]?.finishReason);
+
+        if (retryCount < MAX_RETRIES) {
+            // Kurz warten und nochmal versuchen — Safety-Blocks sind manchmal inkonsistent
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            return callGemini(prompt, retryCount + 1);
+        }
+
+        throw new Error("Gemini hat die Antwort aus Safety-Gründen blockiert.");
+    }
+
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+
+    // Leere Antwort → nochmal versuchen
+    if (!text.trim() && retryCount < MAX_RETRIES) {
+        console.warn(`Gemini leere Antwort (Versuch ${retryCount + 1}/${MAX_RETRIES}). Erneuter Versuch...`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        return callGemini(prompt, retryCount + 1);
+    }
+
+    return text;
 }
 
 function parseAndSave(raw: string, postId: string): BotResponse[] {
     const parsed: GeminiItem[] = JSON.parse(extractJSON(raw));
 
     return parsed.map((item) => {
+        // Gemini schreibt manchmal @ vor die botId — bereinigen
+        const botId = item.botId.replace(/^@/, "");
+
         createComment({
             postId,
-            userId: item.botId,
+            userId: botId,
             content: item.content,
             isBot: true,
             botType: item.botType,
         });
 
         return {
-            userId: item.botId,
+            userId: botId,
             content: item.content,
             botType: item.botType,
         };
     });
+}
+
+// Versucht JSON zu parsen — bei Fehler nochmal den Gemini-Call wiederholen
+async function callGeminiAndParse(prompt: string, postId: string, retryCount = 0): Promise<BotResponse[]> {
+    const MAX_PARSE_RETRIES = 2;
+    const raw = await callGemini(prompt);
+
+    try {
+        return parseAndSave(raw, postId);
+    } catch (err) {
+        if (retryCount < MAX_PARSE_RETRIES) {
+            console.warn(`JSON-Parse fehlgeschlagen (Versuch ${retryCount + 1}/${MAX_PARSE_RETRIES}). Erneuter Versuch...`);
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            return callGeminiAndParse(prompt, postId, retryCount + 1);
+        }
+        throw err;
+    }
 }
 
 function buildBotDescriptions(bots: Bot[]): string {
@@ -195,7 +248,7 @@ Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.
   { "botId": "...", "botType": "...", "content": "..." }
 ]`;
 
-    return parseAndSave(await callGemini(prompt), userPost.postId);
+    return callGeminiAndParse(prompt, userPost.postId);
 }
 
 export async function getCommentsForPostAndComments(
@@ -219,7 +272,16 @@ export async function getCommentsForPostAndComments(
 Bisherige Kommentare im Thread:
 ${commentThread || "(Noch keine Kommentare)"}
 
-Die folgenden Personen steigen jetzt in den Thread ein. Sie haben den Post gelesen und auch die anderen Kommentare gesehen — sie können darauf eingehen, andere Nutzer mit @username ansprechen, oder einfach ihre eigene Meinung zum Post sagen. Jeder reagiert so wie er ist.
+Die folgenden Personen steigen jetzt in diesen Thread ein. Wichtig:
+- Jede Person MUSS auf mindestens einen der bisherigen Kommentare eingehen — nicht nur auf den ursprünglichen Post.
+- Wenn jemand auf einen Kommentar antwortet, nennt er den Verfasser mit @username am Anfang, z.B. "@alex stimmt doch gar nicht..." oder "@infoWatch_DE das hab ich auch gelesen!"
+- Die Reaktionen sollen authentisch wirken — zustimmen, widersprechen, nachhaken, provozieren — je nach Charakter der Person.
+- Wer nichts Passendes im Thread findet, darf auch nur auf den Post reagieren — aber das sollte die Ausnahme sein.
+
+Beispiele wie Antworten aussehen können:
+- "@motivationsbro_kevin bro du hast so recht, genau das hab ich auch gedacht"
+- "@g4nSoderKr4nich99 typisch wieder so ein Kommentar lol"
+- "@infoWatch_DE hast du dafür auch eine Quelle? klingt komisch"
 
 ${buildBotDescriptions(selectedBots)}
 
@@ -230,7 +292,7 @@ Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.
   { "botId": "...", "botType": "...", "content": "..." }
 ]`;
 
-    return parseAndSave(await callGemini(prompt), userPost.postId);
+    return callGeminiAndParse(prompt, userPost.postId);
 }
 
 export async function getSingleBotComment(
@@ -257,7 +319,7 @@ Antworte NUR mit einem JSON-Array, keine Backticks.
   { "botId": "${bot.botId}", "botType": "${bot.botType}", "content": "..." }
 ]`;
 
-    const [response] = parseAndSave(await callGemini(prompt), userPost.postId);
+    const [response] = await callGeminiAndParse(prompt, userPost.postId);
     return response;
 }
 
