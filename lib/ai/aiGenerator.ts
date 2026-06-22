@@ -277,6 +277,7 @@ Die folgenden Personen steigen jetzt in diesen Thread ein. Wichtig:
 - Wenn jemand auf einen Kommentar antwortet, nennt er den Verfasser mit @username am Anfang, z.B. "@alex stimmt doch gar nicht..." oder "@infoWatch_DE das hab ich auch gelesen!"
 - Die Reaktionen sollen authentisch wirken — zustimmen, widersprechen, nachhaken, provozieren — je nach Charakter der Person.
 - Wer nichts Passendes im Thread findet, darf auch nur auf den Post reagieren — aber das sollte die Ausnahme sein.
+- Wenn es von einem Gleichnamingen Bot schon ein Kommentar existiert. Schreibe einen neuen und kopiere den Alten auf keinen Fall
 
 Beispiele wie Antworten aussehen können:
 - "@motivationsbro_kevin bro du hast so recht, genau das hab ich auch gedacht"

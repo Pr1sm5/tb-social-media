@@ -7,6 +7,7 @@ import Texteingabefeld from "./components/TextInputComponent";
 import TextOutputComponent from "./components/TextOutputComponent";
 import CommentComponent from "./components/CommentComponent";
 import LoginOverlay from "./components/LoginOverlay";
+import Header from "./components/Header";
 
 import { Post } from "../lib/types/post";
 import { PostComment } from "@/lib/types/postComment";
@@ -15,7 +16,7 @@ import { useRouter } from "next/navigation";
 
 export default function Page() {
     const router = useRouter();
-    const { user, login, logout, ready } = useUser();
+    const { user, login, ready } = useUser();
 
     const [posts, setPosts] = useState<Post[]>([]);
     const [comments, setComments] = useState<Record<string, PostComment[]>>({});
@@ -106,33 +107,7 @@ export default function Page() {
         <>
             {!user && <LoginOverlay onLogin={login} />}
 
-            <header className="header">
-                <div className="logo"><h1>LOGO</h1></div>
-
-                <div className="header-nav">
-                    <button>For you</button>
-                    <button>Following</button>
-                </div>
-
-                {user && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        {/* Avatar */}
-                        <div style={{
-                            width: "34px", height: "34px", borderRadius: "50%",
-                            background: user.color, display: "flex", alignItems: "center",
-                            justifyContent: "center", fontSize: "13px", fontWeight: 700,
-                            color: "white", flexShrink: 0,
-                        }}>
-                            {user.initials}
-                        </div>
-
-                        {/* Logout */}
-                        <button className="back-btn" onClick={logout}>
-                            Logout
-                        </button>
-                    </div>
-                )}
-            </header>
+            <Header />
 
             <main>
                 <div className="feed">
