@@ -9,6 +9,7 @@ import LoginOverlay from "@/app/components/LoginOverlay";
 import Header from "@/app/components/Header";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
+import InfoBox from "@/app/components/InfoBox";
 
 const NEW_POST_THRESHOLD_MS = 30_000;
 
@@ -49,6 +50,7 @@ export default function PostPage() {
     const [visibleComments, setVisibleComments] = useState<PostComment[]>([]);
     const [loading, setLoading] = useState(true);
     const [commentInput, setCommentInput] = useState("");
+    const [showInfoBox, setShowInfoBox] = useState(false);
 
     const commentsRef = useRef<PostComment[]>([]);
     commentsRef.current = comments;
@@ -107,13 +109,23 @@ export default function PostPage() {
         }
     }
 
+    async function startInfoTimer() {
+        setShowInfoBox(false);
+
+        setTimeout(() => {
+            setShowInfoBox(true);
+        }, 3 * 5 * 1000); // 3 Minuten
+    }
+
     async function loadData(postId: string) {
         setLoading(true);
         try {
             const [postRes, commentRes] = await Promise.all([
                 fetch(`/api/posts/${postId}`),
                 fetch(`/api/posts/${postId}/comments`),
+                
             ]);
+            startInfoTimer();
             const postData = await postRes.json();
             const commentData = await commentRes.json();
             if (postData.success) setPost(postData.data);
@@ -136,6 +148,7 @@ export default function PostPage() {
         if (data.success) {
             setComments((prev) => [data.data, ...prev]);
             setVisibleComments((prev) => [data.data, ...prev]);
+            //startInfoTimer();
             setCommentInput("");
         }
     }
@@ -179,6 +192,9 @@ export default function PostPage() {
                     )}
                 </div>
             </main>
+            {showInfoBox && (
+                            <InfoBox text="Hier kommt später dein Infotext hin." />
+                        )}
 
             <div style={footerStyle}>
                 <div style={footerInnerStyle}>

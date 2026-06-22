@@ -8,11 +8,13 @@ import TextOutputComponent from "./components/TextOutputComponent";
 import CommentComponent from "./components/CommentComponent";
 import LoginOverlay from "./components/LoginOverlay";
 import Header from "./components/Header";
+import InfoBox from "./components/InfoBox";
 
 import { Post } from "../lib/types/post";
 import { PostComment } from "@/lib/types/postComment";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
+
 
 export default function Page() {
     const router = useRouter();
@@ -21,8 +23,17 @@ export default function Page() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [comments, setComments] = useState<Record<string, PostComment[]>>({});
     const [openComments, setOpenComments] = useState<string | null>(null);
+    const [showInfoBox, setShowInfoBox] = useState(false);
 
     useEffect(() => { fetchPosts(); }, []);
+
+    async function startInfoTimer() {
+        setShowInfoBox(false);
+
+        setTimeout(() => {
+            setShowInfoBox(true);
+        }, 3 * 5 * 1000); // 3 Minuten
+    }
 
     async function fetchPosts() {
         try {
@@ -43,9 +54,11 @@ export default function Page() {
                 body: JSON.stringify({ userId: user.username, content }),
             });
             const data = await res.json();
+            console.log(data);
             if (data.success) {
                 setPosts((prev) => [data.data, ...prev]);
-                router.push(`/post/${data.data.postId}`);
+                startInfoTimer();
+                //router.push(`/post/${data.data.postId}`);
             }
         } catch (err) {
             console.error("Fehler beim Erstellen:", err);
@@ -143,6 +156,9 @@ export default function Page() {
                     </section>
                 </div>
             </main>
+            {showInfoBox && (
+                <InfoBox text="Durch das Erstellen des kommentars wurde etwas ausgelöst. Mehrere Bots kommentieren unter deinem Post. Schau nach!" />
+            )}
         </>
     );
 }
