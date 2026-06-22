@@ -23,6 +23,15 @@ function InitialsAvatar({ username, size = 36 }: { username: string; size?: numb
     );
 }
 
+function highlightMentions(text: string) {
+    const parts = text.split(/(@\w+)/g);
+    return parts.map((part, i) =>
+        part.startsWith("@")
+            ? <span key={i} style={{ color: "#1d9bf0", fontWeight: 600 }}>{part}</span>
+            : part
+    );
+}
+
 type CommentProps = {
     comments: PostComment[];
     onAddComment: (text: string) => void;
@@ -47,7 +56,7 @@ export default function CommentComponent({ comments, onAddComment, onDeleteComme
                             </div>
                         </div>
 
-                        <p style={text}>{c.content}</p>
+                        <p style={text}>{highlightMentions(c.content)}</p>
 
                         <div style={actionsStyle}>
                             <button className="icon-btn comment" onClick={(e) => e.stopPropagation()}>💬</button>
