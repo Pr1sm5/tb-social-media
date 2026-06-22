@@ -6,6 +6,7 @@ import { PostComment } from "@/lib/types/postComment";
 import TextOutputComponent from "@/app/components/TextOutputComponent";
 import CommentComponent from "@/app/components/CommentComponent";
 import LoginOverlay from "@/app/components/LoginOverlay";
+import Header from "@/app/components/Header";
 import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 
@@ -39,7 +40,6 @@ function generateColor(username: string): string {
 
 export default function PostPage() {
     const params = useParams();
-    const router = useRouter();
     const { user, login, ready } = useUser();
 
     const id = params?.id as string | undefined;
@@ -153,13 +153,10 @@ export default function PostPage() {
         <>
             {!user && <LoginOverlay onLogin={login} />}
 
-            {/* Scrollbarer Bereich — padding-bottom damit Footer den Content nicht verdeckt */}
+            <Header showBack />
+
             <main style={{ paddingBottom: "80px" }}>
                 <div className="feed">
-                    <button className="back-btn" onClick={() => router.back()}>
-                        ← Back
-                    </button>
-
                     {loading || !post ? (
                         <div>Loading...</div>
                     ) : (
@@ -171,7 +168,6 @@ export default function PostPage() {
                                 onDelete={() => {}}
                             />
 
-                            {/* Kommentare ohne Eingabezeile */}
                             <CommentComponent
                                 comments={visibleComments}
                                 onAddComment={addComment}
@@ -184,23 +180,14 @@ export default function PostPage() {
                 </div>
             </main>
 
-            {/* Sticky Footer — Kommentar-Eingabe */}
             <div style={footerStyle}>
                 <div style={footerInnerStyle}>
-                    {/* Avatar des eingeloggten Users */}
                     {user && (
                         <div style={{
-                            width: "32px",
-                            height: "32px",
-                            borderRadius: "50%",
+                            width: "32px", height: "32px", borderRadius: "50%",
                             background: generateColor(user.username),
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "12px",
-                            fontWeight: 700,
-                            color: "white",
-                            flexShrink: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "12px", fontWeight: 700, color: "white", flexShrink: 0,
                         }}>
                             {user.initials}
                         </div>
@@ -230,9 +217,7 @@ export default function PostPage() {
 
 const footerStyle: React.CSSProperties = {
     position: "fixed",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 0, left: 0, right: 0,
     background: "#000",
     borderTop: "1px solid #2f2f2f",
     zIndex: 100,
