@@ -159,21 +159,108 @@ main {
   color: #777;
 }
 
-.info-box {
-    position: fixed !important;
-    top: 100px !important;
-    right: 20px !important;
-    z-index: 999999 !important;
+.info-container {
+    position: fixed;
+    top: 100px;
+    right: 20px;
 
-    /* Box-Design */
-    width: 280px;
-    padding: 16px 18px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 
-    /* Optik */
-    font-family: Arial, sans-serif;
-    color: #222;
+    z-index: 999999;
 }
+
+.info-box {
+    width: 320px;
+    padding: 18px;
+
+    background: linear-gradient(
+        135deg,
+        rgba(25, 25, 25, 0.98),
+        rgba(40, 40, 40, 0.98)
+    );
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 4px solid #1d9bf0;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.45),
+        0 0 20px rgba(29, 155, 240, 0.15);
+
+    color: white;
+
+    backdrop-filter: blur(10px);
+
+    opacity: 0;
+    transform: scale(0.8);
+
+    max-height: 80vh;
+
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+
+    animation: popIn 0.4s ease-out forwards;
+}
+
+.info-box h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-bottom: 10px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    color: #1d9bf0;
+}
+
+.info-box p {
+    line-height: 1.5;
+    font-size: 14px;
+    color: #d8d8d8;
+}
+
+.info-box.warning {
+    border-left-color: #f1c40f;
+    box-shadow: 0 0 20px rgba(241,196,15,0.2);
+}
+
+.info-box.error {
+    border-left-color: #ff4d4d;
+    box-shadow: 0 0 20px rgba(255,77,77,0.2);
+}
+
+.info-box.success {
+    border-left-color: #2ecc71;
+    box-shadow: 0 0 20px rgba(46,204,113,0.2);
+}
+
+.info-box.info {
+    border-left-color: #1d9bf0;
+    box-shadow: 0 0 20px rgba(29,155,240,0.2);
+}
+
+
+
+
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    70% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+

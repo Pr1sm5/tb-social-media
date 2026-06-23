@@ -51,6 +51,14 @@ export default function PostPage() {
     const [loading, setLoading] = useState(true);
     const [commentInput, setCommentInput] = useState("");
     const [showInfoBox, setShowInfoBox] = useState(false);
+    type InfoBoxItem = {
+        text: string;
+        type?: "info" | "error" | "success" | "warning";
+    };
+    const [infoBoxes, setInfoBoxes] = useState<InfoBoxItem[]>([]);
+    const hasStarted = useRef(false);
+
+
 
     const commentsRef = useRef<PostComment[]>([]);
     commentsRef.current = comments;
@@ -109,12 +117,56 @@ export default function PostPage() {
         }
     }
 
+
     async function startInfoTimer() {
         setShowInfoBox(false);
 
         setTimeout(() => {
             setShowInfoBox(true);
         }, 3 * 5 * 1000); // 3 Minuten
+    }
+
+    function startInfoSequence() {
+        if (hasStarted.current) return;
+        hasStarted.current = true;
+        setInfoBoxes([]);
+
+        const events = [
+            {
+                delay: 15000,
+                data: {
+                    text: "Durch das Erstellen des Kommentars wurde etwas ausgelöst.",
+                    type: "warning" as const
+                }
+            },
+            {
+                delay: 25000,
+                data: {
+                    text: "Mehrere Bots kommentieren unter deinem Post.",
+                    type: "info" as const
+                }
+            },
+            {
+                delay: 35000,
+                data: {
+                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
+                    type: "error" as const
+                }
+            },
+            {
+                delay: 45000,
+                data: {
+                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
+                    type: "success" as const
+                }
+            }
+        ];
+
+        events.forEach(({ delay, data }) => {
+            setTimeout(() => {
+                setInfoBoxes(prev => [...prev, data]);
+            }, delay);
+        });
     }
 
     async function loadData(postId: string) {
@@ -125,7 +177,8 @@ export default function PostPage() {
                 fetch(`/api/posts/${postId}/comments`),
                 
             ]);
-            startInfoTimer();
+            //startInfoTimer();
+            startInfoSequence();
             const postData = await postRes.json();
             const commentData = await commentRes.json();
             if (postData.success) setPost(postData.data);
@@ -192,9 +245,15 @@ export default function PostPage() {
                     )}
                 </div>
             </main>
-            {showInfoBox && (
-                            <InfoBox text="Hier kommt später dein Infotext hin." />
-                        )}
+            <div className="info-container">
+                {infoBoxes.map((box, index) => (
+                    <InfoBox
+                        key={`${box.text}-${box.type}-${index}`}   // 🔥 FIX
+                        text={box.text}
+                        type={box.type}
+                    />
+                ))}
+            </div>
 
             <div style={footerStyle}>
                 <div style={footerInnerStyle}>
