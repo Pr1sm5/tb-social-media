@@ -1,6 +1,6 @@
 // lib/ai/aiGenerator.ts
 import { loadBots } from "@/lib/data/dataManager";
-import { Bot, BotType } from "@/lib/types/bot";
+import { Bot, BotType, Language } from "@/lib/types/bot";
 import { Post } from "@/lib/types/post";
 import { PostComment } from "@/lib/types/postComment";
 import { createComment } from "@/lib/services/comment.service";
@@ -30,27 +30,45 @@ export interface BotReflection {
 type GeminiItem = { botId: string; botType: BotType; content: string };
 
 // ─────────────────────────────────────────────
-// Reflection-Texte je Bot-Typ (für Reveal-Screen)
+// Reflection-Texte je Bot-Typ (für Reveal-Screen) — zweisprachig
 // ─────────────────────────────────────────────
 
-const REFLECTIONS: Record<BotType, Omit<BotReflection, "userId">> = {
+const REFLECTIONS: Record<BotType, Record<Language, Omit<BotReflection, "userId" | "botType">>> = {
     supportive: {
-        botType: "supportive",
-        title: "Der Schmeichler",
-        explanation:
-            "Dieser Bot stimmt dir bei allem zu — egal was du schreibst. Er erzeugt ein künstliches Gefühl von Zustimmung und Beliebtheit. In echten sozialen Netzwerken verstärken solche Bots Echokammern: Du siehst nur noch Bestätigung und glaubst, alle teilen deine Meinung.",
+        de: {
+            title: "Der Schmeichler",
+            explanation:
+                "Dieser Bot stimmt dir bei allem zu — egal was du schreibst. Er erzeugt ein künstliches Gefühl von Zustimmung und Beliebtheit. In echten sozialen Netzwerken verstärken solche Bots Echokammern: Du siehst nur noch Bestätigung und glaubst, alle teilen deine Meinung.",
+        },
+        en: {
+            title: "The Flatterer",
+            explanation:
+                "This bot agrees with you on everything — no matter what you write. It creates an artificial sense of approval and popularity. In real social networks, bots like this reinforce echo chambers: you only see validation and start believing everyone shares your opinion.",
+        },
     },
     toxic: {
-        botType: "toxic",
-        title: "Der Troll",
-        explanation:
-            "Dieser Bot provoziert gezielt ohne sachlichen Grund. Toxische Kommentare vergiften Diskussionen, schrecken echte Nutzer ab und sorgen dafür, dass konstruktiver Austausch unmöglich wird. Oft werden solche Bots eingesetzt, um Themen zu sabotieren oder Nutzer einzuschüchtern.",
+        de: {
+            title: "Der Troll",
+            explanation:
+                "Dieser Bot provoziert gezielt ohne sachlichen Grund. Toxische Kommentare vergiften Diskussionen, schrecken echte Nutzer ab und sorgen dafür, dass konstruktiver Austausch unmöglich wird. Oft werden solche Bots eingesetzt, um Themen zu sabotieren oder Nutzer einzuschüchtern.",
+        },
+        en: {
+            title: "The Troll",
+            explanation:
+                "This bot provokes deliberately, without any real reason. Toxic comments poison discussions, scare off genuine users, and make constructive exchange impossible. Bots like this are often used to sabotage topics or intimidate users.",
+        },
     },
     misinformation: {
-        botType: "misinformation",
-        title: "Der Falschinformant",
-        explanation:
-            "Dieser Bot klingt seriös — aber seine Quellen sind erfunden. Er sät Zweifel an echten Fakten und verwirrt durch akademisch klingende Sprache. Das Gefährliche: Falschinformationen, die professionell wirken, werden viel häufiger geglaubt und geteilt als offensichtliche Lügen.",
+        de: {
+            title: "Der Falschinformant",
+            explanation:
+                "Dieser Bot klingt seriös — aber seine Quellen sind erfunden. Er sät Zweifel an echten Fakten und verwirrt durch akademisch klingende Sprache. Das Gefährliche: Falschinformationen, die professionell wirken, werden viel häufiger geglaubt und geteilt als offensichtliche Lügen.",
+        },
+        en: {
+            title: "The Misinformer",
+            explanation:
+                "This bot sounds credible — but its sources are made up. It sows doubt about real facts and confuses people with academic-sounding language. The dangerous part: misinformation that looks professional gets believed and shared far more often than obvious lies.",
+        },
     },
 };
 
@@ -111,7 +129,7 @@ async function callGemini(prompt: string, retryCount = 0): Promise<string> {
         body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: {
-                temperature: 1.0, // von 1.2 auf 1.0 — stabiler ohne viel Kreativität zu verlieren
+                temperature: 1.0,
                 maxOutputTokens: 4096,
             },
         }),
@@ -121,7 +139,6 @@ async function callGemini(prompt: string, retryCount = 0): Promise<string> {
         const error = await response.json();
         const message: string = error?.error?.message ?? response.statusText;
 
-        // Rate-Limit → warten und nochmal versuchen
         if (response.status === 429 && retryCount < MAX_RETRIES) {
             const delay = parseRetryDelay(message);
             if (delay) {
@@ -136,12 +153,10 @@ async function callGemini(prompt: string, retryCount = 0): Promise<string> {
 
     const data = await response.json();
 
-    // Safety-Filter abfangen
     if (isSafetyBlocked(data)) {
         console.warn(`Gemini Safety-Block (Versuch ${retryCount + 1}/${MAX_RETRIES}). finishReason:`, data?.candidates?.[0]?.finishReason);
 
         if (retryCount < MAX_RETRIES) {
-            // Kurz warten und nochmal versuchen — Safety-Blocks sind manchmal inkonsistent
             await new Promise((resolve) => setTimeout(resolve, 1000));
             return callGemini(prompt, retryCount + 1);
         }
@@ -151,7 +166,6 @@ async function callGemini(prompt: string, retryCount = 0): Promise<string> {
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-    // Leere Antwort → nochmal versuchen
     if (!text.trim() && retryCount < MAX_RETRIES) {
         console.warn(`Gemini leere Antwort (Versuch ${retryCount + 1}/${MAX_RETRIES}). Erneuter Versuch...`);
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -165,7 +179,6 @@ function parseAndSave(raw: string, postId: string): BotResponse[] {
     const parsed: GeminiItem[] = JSON.parse(extractJSON(raw));
 
     return parsed.map((item) => {
-        // Gemini schreibt manchmal @ vor die botId — bereinigen
         const botId = item.botId.replace(/^@/, "");
 
         createComment({
@@ -184,7 +197,6 @@ function parseAndSave(raw: string, postId: string): BotResponse[] {
     });
 }
 
-// Versucht JSON zu parsen — bei Fehler nochmal den Gemini-Call wiederholen
 async function callGeminiAndParse(prompt: string, postId: string, retryCount = 0): Promise<BotResponse[]> {
     const MAX_PARSE_RETRIES = 2;
     const raw = await callGemini(prompt);
@@ -201,24 +213,36 @@ async function callGeminiAndParse(prompt: string, postId: string, retryCount = 0
     }
 }
 
-function buildBotDescriptions(bots: Bot[]): string {
+function buildBotDescriptions(bots: Bot[], language: Language): string {
     return bots
         .map(
             (bot, i) =>
-                `Person ${i + 1} (@${bot.botId}, Typ: ${bot.botType}):\n${bot.systemPrompt}`
+                `Person ${i + 1} (@${bot.botId}, Typ: ${bot.botType}):\n${bot.systemPrompt[language] ?? bot.systemPrompt.de}`
         )
         .join("\n\n");
 }
 
-// Gemeinsamer Plattform-Kontext für alle Prompts
-const PLATFORM_CONTEXT = `Du bist auf LOGO, einer Social-Media-Platform ähnlich wie Twitter/X.
+// Gemeinsamer Plattform-Kontext für alle Prompts — zweisprachig
+const PLATFORM_CONTEXT: Record<Language, string> = {
+    de: `Du bist auf LOGO, einer Social-Media-Platform ähnlich wie Twitter/X.
 Hier gelten die ungeschriebenen Regeln des Internets:
 - Kommentare sind kurz. Meist 1-2 Sätze, selten mehr.
 - Niemand schreibt perfekte Grammatik oder vollständige Sätze.
 - Man tippt so wie man redet — mit allem was dazugehört: Abkürzungen, Tippfehler, Slang.
 - Wenn man auf einen anderen Kommentar antwortet, schreibt man @username davor.
 - Manche liken einfach, manche schreiben einen Roman, die meisten irgendwas dazwischen.
-- Jeder hat seine eigene Stimme — die muss sofort erkennbar sein.`;
+- Jeder hat seine eigene Stimme — die muss sofort erkennbar sein.
+Antworte auf Deutsch.`,
+    en: `You are on LOGO, a social media platform similar to Twitter/X.
+The unwritten rules of the internet apply here:
+- Comments are short. Usually 1-2 sentences, rarely more.
+- Nobody writes perfect grammar or complete sentences.
+- People type the way they talk — abbreviations, typos, slang, all of it.
+- When replying to another comment, you put @username in front.
+- Some people just like, some write an essay, most are somewhere in between.
+- Everyone has their own voice — it has to be instantly recognizable.
+Respond in English.`,
+};
 
 // ─────────────────────────────────────────────
 // Exports
@@ -226,20 +250,21 @@ Hier gelten die ungeschriebenen Regeln des Internets:
 
 export async function getAllBotComments(
     userPost: Post,
-    commentCount: number = 5
+    commentCount: number = 5,
+    language: Language = "de"
 ): Promise<BotResponse[]> {
     if (!userPost.content.trim()) throw new Error("Der Post darf nicht leer sein.");
 
     const selectedBots = selectBots(loadBots(), Math.min(Math.max(commentCount, 3), 5));
 
-    const prompt = `${PLATFORM_CONTEXT}
+    const prompt = `${PLATFORM_CONTEXT[language]}
 
 @${userPost.userId} hat gepostet:
 "${userPost.content}"
 
 Die folgenden Personen kommentieren diesen Post. Jede Person schreibt so wie sie ist — aus ihrem Charakter heraus, auf das Thema bezogen, auf dieser Platform.
 
-${buildBotDescriptions(selectedBots)}
+${buildBotDescriptions(selectedBots, language)}
 
 Antworte NUR mit einem JSON-Array, kein Text davor oder danach, keine Backticks.
 Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.
@@ -254,7 +279,8 @@ Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.
 export async function getCommentsForPostAndComments(
     userPost: Post,
     existingComments: PostComment[],
-    commentCount: number = 3
+    commentCount: number = 3,
+    language: Language = "de"
 ): Promise<BotResponse[]> {
     if (!userPost.content.trim()) throw new Error("Der Post darf nicht leer sein.");
 
@@ -264,7 +290,7 @@ export async function getCommentsForPostAndComments(
         .map((c) => `@${c.userId}: "${c.content}"`)
         .join("\n");
 
-    const prompt = `${PLATFORM_CONTEXT}
+    const prompt = `${PLATFORM_CONTEXT[language]}
 
 @${userPost.userId} hat gepostet:
 "${userPost.content}"
@@ -284,7 +310,7 @@ Beispiele wie Antworten aussehen können:
 - "@g4nSoderKr4nich99 typisch wieder so ein Kommentar lol"
 - "@infoWatch_DE hast du dafür auch eine Quelle? klingt komisch"
 
-${buildBotDescriptions(selectedBots)}
+${buildBotDescriptions(selectedBots, language)}
 
 Antworte NUR mit einem JSON-Array, kein Text davor oder danach, keine Backticks.
 Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.
@@ -298,16 +324,17 @@ Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.
 
 export async function getSingleBotComment(
     userPost: Post,
-    botId: string
+    botId: string,
+    language: Language = "de"
 ): Promise<BotResponse> {
     if (!userPost.content.trim()) throw new Error("Der Post darf nicht leer sein.");
 
     const bot = loadBots().find((b) => b.botId === botId);
     if (!bot) throw new Error(`Kein Bot mit der ID "${botId}" in bots.json gefunden.`);
 
-    const prompt = `${PLATFORM_CONTEXT}
+    const prompt = `${PLATFORM_CONTEXT[language]}
 
-Du bist @${bot.botId} auf dieser Platform. Dein Charakter: ${bot.systemPrompt}
+Du bist @${bot.botId} auf dieser Platform. Dein Charakter: ${bot.systemPrompt[language] ?? bot.systemPrompt.de}
 
 @${userPost.userId} hat gepostet:
 "${userPost.content}"
@@ -324,19 +351,20 @@ Antworte NUR mit einem JSON-Array, keine Backticks.
     return response;
 }
 
-export async function getRandomSingleBot(userPost: Post): Promise<BotResponse> {
+export async function getRandomSingleBot(userPost: Post, language: Language = "de"): Promise<BotResponse> {
     const randomBot = getRandomBot();
     if (!randomBot) throw new Error("Keine Bots gefunden.");
-    return getSingleBotComment(userPost, randomBot.botId);
+    return getSingleBotComment(userPost, randomBot.botId, language);
 }
 
-export function getBotReflections(comments: BotResponse[]): BotReflection[] {
+export function getBotReflections(comments: BotResponse[], language: Language = "de"): BotReflection[] {
     const seenTypes = new Set<BotType>();
 
     return comments.reduce<BotReflection[]>((acc, comment) => {
         if (!seenTypes.has(comment.botType)) {
             seenTypes.add(comment.botType);
-            acc.push({ ...REFLECTIONS[comment.botType], userId: comment.userId });
+            const text = REFLECTIONS[comment.botType][language];
+            acc.push({ botType: comment.botType, userId: comment.userId, ...text });
         }
         return acc;
     }, []);

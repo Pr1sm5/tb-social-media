@@ -1,11 +1,10 @@
 // app/api/posts/route.ts
 import { NextResponse } from "next/server";
 import { CreatePostInput } from "@/lib/types/post";
+import { Language } from "@/lib/types/bot";
 import { getPosts, createPost } from "@/lib/services/post.service";
-import {getAllBotComments, getRandomSingleBot, getSingleBotComment} from "@/lib/ai/aiGenerator";
-import { createComment } from "@/lib/services/comment.service";
-import {getRandomBot} from "@/lib/services/bots.service";
-import {scheduleFollowUpComments} from "@/lib/ai/botScheduler";
+import { getAllBotComments } from "@/lib/ai/aiGenerator";
+import { scheduleFollowUpComments } from "@/lib/ai/botScheduler";
 
 // GET app/api/posts
 export async function GET() {
@@ -13,9 +12,9 @@ export async function GET() {
     return NextResponse.json({ success: true, data: posts });
 }
 
-// POST app/api/posts — Post erstellen + Bots antworten lassen + Kommentare speichern
+// POST app/api/posts — Post erstellen + Bots antworten lassen (fire-and-forget)
 export async function POST(req: Request) {
-    const body: CreatePostInput = await req.json();
+    const body: CreatePostInput & { language?: Language } = await req.json();
 
     if (!body.content || !body.userId) {
         return NextResponse.json(
@@ -24,26 +23,26 @@ export async function POST(req: Request) {
         );
     }
 
+    // Sprache aus dem Request — Standard ist Deutsch
+    const language: Language = body.language === "en" ? "en" : "de";
+
     // 1. Post erstellen
     const post = createPost(body);
 
-    // 2. Bots generieren Kommentare (3–5 Stück)
-    let botComments = [];
-    try {
-        const generated = getAllBotComments(post, 5)
-            .then(() => {
-                // Zweite Welle — nach 45 Sekunden
-                scheduleFollowUpComments(post);
-            })
-            .catch(console.error);
+    // 2. Bots generieren Kommentare (3–5 Stück) — läuft im Hintergrund weiter,
+    //    Response wartet nicht darauf (fire-and-forget)
+    getAllBotComments(post, 5, language)
+        .then(() => {
+            // Zweite Welle — nach 45 Sekunden, gleiche Sprache
+            scheduleFollowUpComments(post, 45_000, language);
+        })
+        .catch((error) => {
+            console.error("Bot-Generierung fehlgeschlagen:", error);
+        });
 
-    } catch (error) {
-        console.error("Bot-Generierung fehlgeschlagen:", error);
-    }
-
-    // 4. Post + gespeicherte Bot-Kommentare zurückgeben
+    // 3. Post sofort zurückgeben — Bot-Kommentare folgen asynchron
     return NextResponse.json({
         success: true,
-        data: post
+        data: post,
     });
 }
