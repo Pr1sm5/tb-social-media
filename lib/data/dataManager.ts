@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from "path";
 import {Post} from "@/lib/types/post";
 import {PostComment} from "@/lib/types/postComment";
-
+import {Bot} from "@/lib/types/bot";
 
 
 const commentsFilePath = path.join(process.cwd(), "data", "comments.json");
@@ -84,3 +84,18 @@ export function saveComment(comment: PostComment){
 }
 //endregion
 
+
+//region Bots
+export function loadBots() : Bot[]{
+    if (!fs.existsSync(botsFilePath)){
+        fs.writeFileSync(botsFilePath, "[]")
+    }
+
+    const data = fs.readFileSync(botsFilePath, "utf-8")
+
+    return data.trim()
+        ? JSON.parse(data)
+        : [];
+}
+
+//endregion

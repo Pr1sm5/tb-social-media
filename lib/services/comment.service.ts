@@ -6,7 +6,8 @@ import {randomUUID} from "node:crypto";
 const comment: CreateCommentInput = {
     postId: "3",
     content: "Das ist ein Kommentar",
-    userId: "WeebMaxi"
+    userId: "AbbrecherMaxi",
+    isBot: true
 }
 
 
@@ -18,6 +19,8 @@ export function createComment(input : CreateCommentInput): PostComment | null{
         userId: input.userId,
         commentId: randomUUID(),
         timestamp: new Date().toISOString(),
+        isBot : input.isBot,
+        botType : input.botType
     }
 
     saveComment(comment)
@@ -59,17 +62,22 @@ export function updateComment(
 
 
 export function deleteComment(commentId: string){
-    const comments : PostComment[] = loadComments()
+    const comments: PostComment[] = loadComments()
 
-    const index :number = comments.findIndex(c => c.commentId === commentId)
-    if (index === -1) return false
+    console.log("ALL COMMENTS:", comments.map(c => c.commentId))
+    console.log("DELETE ID:", commentId)
 
-    const deleted = comments[index]
+    const index = comments.findIndex(c => c.commentId === commentId)
+
+    if (index === -1) {
+        console.log("NOT FOUND")
+        return false
+    }
 
     comments.splice(index, 1)
     saveComments(comments)
 
-    return deleted
+    return true
 }
 
 export function getCommentById(commentId: string): PostComment | null{

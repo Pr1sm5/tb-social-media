@@ -2,8 +2,10 @@
 import { NextResponse } from "next/server";
 import { CreatePostInput } from "@/lib/types/post";
 import { getPosts, createPost } from "@/lib/services/post.service";
-import { getAllBotComments } from "@/lib/ai/aiGenerator";
+import {getAllBotComments, getRandomSingleBot, getSingleBotComment} from "@/lib/ai/aiGenerator";
 import { createComment } from "@/lib/services/comment.service";
+import {getRandomBot} from "@/lib/services/bots.service";
+import {scheduleFollowUpComments} from "@/lib/ai/botScheduler";
 
 // GET app/api/posts
 export async function GET() {
@@ -28,16 +30,13 @@ export async function POST(req: Request) {
     // 2. Bots generieren Kommentare (3–5 Stück)
     let botComments = [];
     try {
-        const generated = await getAllBotComments(post.content, 5);
-
-        // 3. Jeden Bot-Kommentar in comments.json speichern
-        botComments = generated.map((botComment) =>
-            createComment({
-                postId: post.postId,
-                content: botComment.content,
-                userId: botComment.userId,  // botId als userId
+        const generated = getAllBotComments(post, 5)
+            .then(() => {
+                // Zweite Welle — nach 45 Sekunden
+                scheduleFollowUpComments(post);
             })
-        );
+            .catch(console.error);
+
     } catch (error) {
         console.error("Bot-Generierung fehlgeschlagen:", error);
     }
@@ -45,7 +44,6 @@ export async function POST(req: Request) {
     // 4. Post + gespeicherte Bot-Kommentare zurückgeben
     return NextResponse.json({
         success: true,
-        data: post,
-        botComments, // [{ commentId, postId, userId, content, timestamp }, ...]
+        data: post
     });
 }

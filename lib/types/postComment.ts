@@ -4,10 +4,14 @@ export interface PostComment {
     userId: string
     content: string
     timestamp: string
+    isBot? : boolean
+    botType? : string
 }
 
 export interface CreateCommentInput {
     postId: string
     userId: string
     content: string
+    isBot? : boolean
+    botType? : string
 }

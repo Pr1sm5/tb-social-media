@@ -6,110 +6,84 @@ import { useEffect, useState } from "react";
 import Texteingabefeld from "./components/TextInputComponent";
 import TextOutputComponent from "./components/TextOutputComponent";
 import CommentComponent from "./components/CommentComponent";
+import LoginOverlay from "./components/LoginOverlay";
+import Header from "./components/Header";
+import InfoBox from "./components/InfoBox";
 
-import { Post, CreatePostInput } from "../lib/types/post";
-import {PostComment, CreateCommentInput} from "@/lib/types/postComment";
+import { Post } from "../lib/types/post";
+import { PostComment } from "@/lib/types/postComment";
+import { useUser } from "@/hooks/useUser";
+import { useRouter } from "next/navigation";
+
 
 export default function Page() {
+    const router = useRouter();
+    const { user, login, ready } = useUser();
+
     const [posts, setPosts] = useState<Post[]>([]);
     const [comments, setComments] = useState<Record<string, PostComment[]>>({});
     const [openComments, setOpenComments] = useState<string | null>(null);
+    const [showInfoBox, setShowInfoBox] = useState(false);
 
-    // POSTS LADEN
+    useEffect(() => { fetchPosts(); }, []);
+
+    async function startInfoTimer() {
+        setShowInfoBox(false);
+
+        setTimeout(() => {
+            setShowInfoBox(true);
+        }, 3 * 5 * 1000); // 3 Minuten
+    }
+
     async function fetchPosts() {
         try {
             const res = await fetch("/api/posts");
             const data = await res.json();
-
-            if (data.success) {
-                setPosts(data.data);
-            }
+            if (data.success) setPosts(data.data);
         } catch (err) {
             console.error("Fehler beim Laden der Posts:", err);
         }
     }
 
-    // Beim ersten Render laden
-    useEffect(() => {
-        fetchPosts();
-    }, []);
-
-    // POST ERSTELLEN
     async function addPost(content: string) {
+        if (!user) return;
         try {
             const res = await fetch("/api/posts", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    userId: "123", // später aus Auth/User holen
-                    content,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.username, content }),
             });
-
             const data = await res.json();
-
+            console.log(data);
             if (data.success) {
                 setPosts((prev) => [data.data, ...prev]);
+                startInfoTimer();
+                //router.push(`/post/${data.data.postId}`);
             }
         } catch (err) {
             console.error("Fehler beim Erstellen:", err);
         }
     }
 
-    // POST LÖSCHEN
     async function deletePost(postId: string) {
         try {
-            const res = await fetch(`/api/posts/${postId}`, {
-                method: "DELETE",
-            });
-
+            const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
             const data = await res.json();
-
-            if (data.success) {
-                setPosts((prev) =>
-                    prev.filter((post) => post.postId !== postId)
-                );
-            }
+            if (data.success) setPosts((prev) => prev.filter((p) => p.postId !== postId));
         } catch (err) {
             console.error("Fehler beim Löschen:", err);
         }
     }
 
-    // COMMENTS LADEN
-    async function fetchComments(postId: string) {
-        try {
-            const res = await fetch(`/api/posts/${postId}/comments`);
-            const data = await res.json();
-
-            if (data.success) {
-                setComments((prev) => ({
-                    ...prev,
-                    [postId]: data.data,
-                }));
-            }
-        } catch (err) {
-            console.error("Fehler beim Laden der Kommentare:", err);
-        }
-    }
-
-    // COMMENT HINZUFÜGEN
     async function addComment(postId: string, content: string) {
+        if (!user) return;
         try {
             const res = await fetch(`/api/posts/${postId}/comments`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    userId: "123",
-                    content,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.username, content }),
             });
-
             const data = await res.json();
-
             if (data.success) {
                 setComments((prev) => ({
                     ...prev,
@@ -121,52 +95,35 @@ export default function Page() {
         }
     }
 
-    // COMMENTS TOGGLE
     async function toggleComments(postId: string) {
-        if (openComments === postId) {
-            setOpenComments(null);
-            return;
-        }
-
+        if (openComments === postId) { setOpenComments(null); return; }
         setOpenComments(postId);
-
         if (!comments[postId]) {
             const res = await fetch(`/api/posts/${postId}/comments`);
             const data = await res.json();
-
-            if (data.success) {
-                setComments((prev) => ({
-                    ...prev,
-                    [postId]: data.data,
-                }));
-            }
+            if (data.success) setComments((prev) => ({ ...prev, [postId]: data.data }));
         }
     }
 
+    async function deleteComment(commentId: string) {
+        try {
+            const res = await fetch(`/api/posts/comments/${commentId}`, { method: "DELETE" });
+            if (!res.ok) console.error("DELETE FAILED");
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    if (!ready) return null;
+
     return (
         <>
-            <header className="header">
-                <div className="logo">
-                    <h1>LOGO</h1>
-                </div>
+            {!user && <LoginOverlay onLogin={login} />}
 
-                <div className="header-nav">
-                    <button>For you</button>
-                    <button>Following</button>
-                </div>
-
-                <div className="search-container">
-                    <input
-                        type="text"
-                        placeholder="Search"
-                        className="searchbar"
-                    />
-                </div>
-            </header>
+            <Header />
 
             <main>
                 <div className="feed">
-
                     <section>
                         <Texteingabefeld onSend={addPost} />
                     </section>
@@ -174,14 +131,14 @@ export default function Page() {
                     <section>
                         {posts.map((post) => (
                             <div key={post.postId}>
-
                                 <div
-                                    onClick={() => toggleComments(post.postId)}
+                                    className="post-card"
+                                    onClick={() => router.push(`/post/${post.postId}`)}
                                 >
                                     <TextOutputComponent
                                         text={post.content}
-                                        name="Kinky"
-                                        username="Samed123"
+                                        name={post.userId}
+                                        username={post.userId}
                                         onDelete={() => deletePost(post.postId)}
                                     />
                                 </div>
@@ -189,18 +146,19 @@ export default function Page() {
                                 {openComments === post.postId && (
                                     <CommentComponent
                                         comments={comments[post.postId] || []}
-                                        onAddComment={(text) =>
-                                            addComment(post.postId, text)
-                                        }
+                                        onAddComment={(text) => addComment(post.postId, text)}
+                                        onDeleteComment={deleteComment}
+                                        currentUsername={user?.username}
                                     />
                                 )}
-
                             </div>
                         ))}
                     </section>
-
                 </div>
             </main>
+            {showInfoBox && (
+                <InfoBox text="Durch das Erstellen des kommentars wurde etwas ausgelöst. Mehrere Bots kommentieren unter deinem Post. Schau nach!" />
+            )}
         </>
     );
 }
