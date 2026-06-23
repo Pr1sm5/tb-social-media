@@ -10,7 +10,7 @@ const start = new Date().getTime()
 const post : CreatePostInput = {
     userId: "SomeName",
     image: "null",
-    content: "Ich ficke deine mamamamama"
+    content: "guten tag"
 }
 
 
