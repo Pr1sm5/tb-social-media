@@ -8,7 +8,7 @@ export default function Texteingabefeld({ onSend }: { onSend: (text: string) => 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
-        const timer = setTimeout(() => setGlowing(false), 3000);
+        const timer = setTimeout(() => setGlowing(false), 100000);
         return () => clearTimeout(timer);
     }, []);
 
@@ -43,7 +43,7 @@ export default function Texteingabefeld({ onSend }: { onSend: (text: string) => 
                         handleSend();
                     }
                 }}
-                onFocus={() => setGlowing(false)}
+                onFocus={() => setGlowing(true)}
                 placeholder="What's up?"
                 rows={1}
                 style={textareaStyle}
@@ -52,7 +52,7 @@ export default function Texteingabefeld({ onSend }: { onSend: (text: string) => 
             <button
                 onClick={handleSend}
                 className="send-btn"
-                style={{ alignSelf: "flex-end" }}
+                style = {pillBtnStyle}
             >
                 Send
             </button>
@@ -82,4 +82,15 @@ const textareaStyle: React.CSSProperties = {
     overflow: "hidden",
     lineHeight: "1.5",
     fontFamily: "inherit",
+};
+
+const pillBtnStyle: React.CSSProperties = {
+    padding: "6px 18px",
+    borderRadius: "999px",
+    border: "1px solid #333",
+    background: "transparent",
+    color: "white",
+    fontSize: "14px",
+    cursor: "pointer",
+    transition: "background 0.15s ease, border-color 0.15s ease",
 };

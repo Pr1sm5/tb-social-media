@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "@/lib/types/user";
+import {router} from "next/client";
 
 const SESSION_KEY = "logo_user";
 
@@ -25,6 +26,7 @@ export function useUser() {
         setUser(newUser);
         try {
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
+            window.location.reload();
         } catch {}
     }
 
@@ -32,6 +34,7 @@ export function useUser() {
         setUser(null);
         try {
             sessionStorage.removeItem(SESSION_KEY);
+            window.location.reload();
         } catch {}
     }
 

@@ -7,7 +7,7 @@ import TextOutputComponent from "@/app/components/TextOutputComponent";
 import CommentComponent from "@/app/components/CommentComponent";
 import LoginOverlay from "@/app/components/LoginOverlay";
 import Header from "@/app/components/Header";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import InfoBox from "@/app/components/InfoBox";
 
@@ -39,6 +39,11 @@ function generateColor(username: string): string {
     return colors[Math.abs(hash) % colors.length];
 }
 
+type InfoBoxItem = {
+    text: string;
+    type?: "info" | "error" | "success" | "warning";
+};
+
 export default function PostPage() {
     const params = useParams();
     const { user, login, ready } = useUser();
@@ -50,18 +55,23 @@ export default function PostPage() {
     const [visibleComments, setVisibleComments] = useState<PostComment[]>([]);
     const [loading, setLoading] = useState(true);
     const [commentInput, setCommentInput] = useState("");
-    const [showInfoBox, setShowInfoBox] = useState(false);
-    type InfoBoxItem = {
-        text: string;
-        type?: "info" | "error" | "success" | "warning";
-    };
     const [infoBoxes, setInfoBoxes] = useState<InfoBoxItem[]>([]);
+    const [footerShake, setFooterShake] = useState(false);
+    const [showBanner, setShowBanner] = useState(false);
+
     const hasStarted = useRef(false);
-
-
-
+    const prevVisibleCount = useRef(0);
     const commentsRef = useRef<PostComment[]>([]);
     commentsRef.current = comments;
+
+    // Footer schütteln wenn neuer Bot-Kommentar reinkommt
+    useEffect(() => {
+        if (visibleComments.length > prevVisibleCount.current && prevVisibleCount.current > 0) {
+            setFooterShake(true);
+            setTimeout(() => setFooterShake(false), 600);
+        }
+        prevVisibleCount.current = visibleComments.length;
+    }, [visibleComments]);
 
     useEffect(() => {
         if (comments.length === 0) return;
@@ -117,55 +127,20 @@ export default function PostPage() {
         }
     }
 
-
-    async function startInfoTimer() {
-        setShowInfoBox(false);
-
-        setTimeout(() => {
-            setShowInfoBox(true);
-        }, 3 * 5 * 1000); // 3 Minuten
-    }
-
     function startInfoSequence() {
         if (hasStarted.current) return;
         hasStarted.current = true;
         setInfoBoxes([]);
 
-        const events = [
-            {
-                delay: 15000,
-                data: {
-                    text: "Durch das Erstellen des Kommentars wurde etwas ausgelöst.",
-                    type: "warning" as const
-                }
-            },
-            {
-                delay: 25000,
-                data: {
-                    text: "Mehrere Bots kommentieren unter deinem Post.",
-                    type: "info" as const
-                }
-            },
-            {
-                delay: 35000,
-                data: {
-                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
-                    type: "error" as const
-                }
-            },
-            {
-                delay: 45000,
-                data: {
-                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
-                    type: "success" as const
-                }
-            }
+        const events: { delay: number; data: InfoBoxItem }[] = [
+            { delay: 15000, data: { text: "Durch das Erstellen des Kommentars wurde etwas ausgelöst.", type: "warning" } },
+            { delay: 25000, data: { text: "Mehrere Personen kommentieren unter deinem Post.", type: "info" } },
+            { delay: 35000, data: { text: "Die Aktivität steigt ungewöhnlich schnell an.", type: "error" } },
+            { delay: 45000, data: { text: "Die Aktivität steigt ungewöhnlich schnell an.", type: "success" } },
         ];
 
         events.forEach(({ delay, data }) => {
-            setTimeout(() => {
-                setInfoBoxes(prev => [...prev, data]);
-            }, delay);
+            setTimeout(() => setInfoBoxes(prev => [...prev, data]), delay);
         });
     }
 
@@ -175,13 +150,20 @@ export default function PostPage() {
             const [postRes, commentRes] = await Promise.all([
                 fetch(`/api/posts/${postId}`),
                 fetch(`/api/posts/${postId}/comments`),
-                
             ]);
-            //startInfoTimer();
             startInfoSequence();
+
             const postData = await postRes.json();
             const commentData = await commentRes.json();
-            if (postData.success) setPost(postData.data);
+
+            if (postData.success) {
+                setPost(postData.data);
+                // Banner nur bei neuem Post anzeigen
+                if (isNewPost(postData.data.timestamp)) {
+                    setShowBanner(true);
+                    setTimeout(() => setShowBanner(false), 4000);
+                }
+            }
             if (commentData.success) setComments(commentData.data);
         } catch (err) {
             console.error("ERROR loading post:", err);
@@ -201,7 +183,6 @@ export default function PostPage() {
         if (data.success) {
             setComments((prev) => [data.data, ...prev]);
             setVisibleComments((prev) => [data.data, ...prev]);
-            //startInfoTimer();
             setCommentInput("");
         }
     }
@@ -218,7 +199,6 @@ export default function PostPage() {
     return (
         <>
             {!user && <LoginOverlay onLogin={login} />}
-
             <Header showBack />
 
             <main style={{ paddingBottom: "80px" }}>
@@ -233,7 +213,6 @@ export default function PostPage() {
                                 username={post.userId}
                                 onDelete={() => {}}
                             />
-
                             <CommentComponent
                                 comments={visibleComments}
                                 onAddComment={addComment}
@@ -245,17 +224,19 @@ export default function PostPage() {
                     )}
                 </div>
             </main>
+
             <div className="info-container">
                 {infoBoxes.map((box, index) => (
                     <InfoBox
-                        key={`${box.text}-${box.type}-${index}`}   // 🔥 FIX
+                        key={`${box.text}-${box.type}-${index}`}
                         text={box.text}
                         type={box.type}
                     />
                 ))}
             </div>
 
-            <div style={footerStyle}>
+            {/* Sticky Footer — mit Shake-Animation bei neuem Kommentar */}
+            <div style={footerStyle} className={footerShake ? "footer-shake" : ""}>
                 <div style={footerInnerStyle}>
                     {user && (
                         <div style={{
@@ -267,19 +248,17 @@ export default function PostPage() {
                             {user.initials}
                         </div>
                     )}
-
                     <input
                         value={commentInput}
                         onChange={(e) => setCommentInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addComment(commentInput)}
                         placeholder="Schreib einen Kommentar..."
                         style={footerInputStyle}
-                        className="text-input"
+                        className="text-input comment-input-glow"
                     />
-
                     <button
                         className="send-btn"
-                        style={{ padding: "8px 16px", fontSize: "14px", flexShrink: 0 }}
+                        style={pillBtnStyle}
                         onClick={() => addComment(commentInput)}
                     >
                         Post
@@ -289,6 +268,22 @@ export default function PostPage() {
         </>
     );
 }
+
+const bannerStyle: React.CSSProperties = {
+    position: "fixed",
+    top: "80px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    background: "#1d9bf0",
+    color: "white",
+    padding: "10px 20px",
+    borderRadius: "999px",
+    fontSize: "14px",
+    fontWeight: 500,
+    zIndex: 200,
+    whiteSpace: "nowrap",
+    boxShadow: "0 4px 20px rgba(29,155,240,0.4)",
+};
 
 const footerStyle: React.CSSProperties = {
     position: "fixed",
@@ -317,4 +312,15 @@ const footerInputStyle: React.CSSProperties = {
     color: "white",
     fontSize: "15px",
     outline: "none",
+};
+
+const pillBtnStyle: React.CSSProperties = {
+    padding: "6px 18px",
+    borderRadius: "999px",
+    border: "1px solid #333",
+    background: "transparent",
+    color: "white",
+    fontSize: "14px",
+    cursor: "pointer",
+    transition: "background 0.15s ease, border-color 0.15s ease",
 };

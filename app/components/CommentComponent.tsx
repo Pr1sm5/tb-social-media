@@ -104,3 +104,13 @@ const name: React.CSSProperties           = { fontWeight: 600, color: "white" };
 const handle: React.CSSProperties         = { fontSize: "12px", color: "#888" };
 const text: React.CSSProperties           = { color: "#ddd", margin: 0 };
 const actionsStyle: React.CSSProperties   = { display: "flex", gap: "4px", marginTop: "5px" };
+const pillBtnStyle: React.CSSProperties = {
+    padding: "6px 18px",
+    borderRadius: "999px",
+    border: "1px solid #333",
+    background: "transparent",
+    color: "white",
+    fontSize: "14px",
+    cursor: "pointer",
+    transition: "background 0.15s ease, border-color 0.15s ease",
+};

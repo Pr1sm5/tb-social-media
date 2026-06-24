@@ -11,6 +11,12 @@ export default function Header({ showBack = false }: HeaderProps) {
     const { user, logout } = useUser();
     const router = useRouter();
 
+    function handleLogout() {
+        logout();
+        router.push("/");  // ← immer zur Main Page
+    }
+
+
     return (
         <header className="header">
             {showBack ? (
@@ -40,7 +46,7 @@ export default function Header({ showBack = false }: HeaderProps) {
                     }}>
                         {user.initials}
                     </div>
-                    <button style={pillBtnStyle} onClick={logout}>
+                    <button style={pillBtnStyle} onClick={handleLogout}>
                         Logout
                     </button>
                 </div>
@@ -58,6 +64,7 @@ const pillBtnStyle: React.CSSProperties = {
     fontSize: "14px",
     cursor: "pointer",
     transition: "background 0.15s ease, border-color 0.15s ease",
+    boxShadow: "0 0 20px rgba(230,0,0,0.2)",
 };
 
 const navStyle: React.CSSProperties = {
