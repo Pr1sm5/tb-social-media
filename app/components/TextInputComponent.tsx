@@ -1,47 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Texteingabefeld({ onSend }: { onSend: (text: string) => void }) {
-  const [text, setText] = useState("");
+    const [text, setText] = useState("");
+    const [glowing, setGlowing] = useState(true);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  function handleSend() {
-    if (!text.trim()) return;
-    onSend(text);
-    setText("");
-  }
+    useEffect(() => {
+        const timer = setTimeout(() => setGlowing(false), 3000);
+        return () => clearTimeout(timer);
+    }, []);
 
-  return (
-      <div style={containerStyle}>
-        <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="What's up?"
-            style={inputStyle}
-            className="text-input"
-        />
-        <button onClick={handleSend} className="send-btn">
-          Send
-        </button>
-      </div>
-  );
+    // Höhe automatisch anpassen
+    useEffect(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = "auto";
+        el.style.height = `${el.scrollHeight}px`;
+    }, [text]);
+
+    function handleSend() {
+        if (!text.trim()) return;
+        onSend(text);
+        setText("");
+        // Höhe zurücksetzen
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+        }
+    }
+
+    return (
+        <div style={containerStyle} className={glowing ? "post-input-glow" : ""}>
+            <textarea
+                ref={textareaRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                    // Enter ohne Shift schickt ab, Shift+Enter macht Zeilenumbruch
+                    if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                    }
+                }}
+                onFocus={() => setGlowing(false)}
+                placeholder="What's up?"
+                rows={1}
+                style={textareaStyle}
+                className="text-input"
+            />
+            <button
+                onClick={handleSend}
+                className="send-btn"
+                style={{ alignSelf: "flex-end" }}
+            >
+                Send
+            </button>
+        </div>
+    );
 }
 
 const containerStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  padding: "20px",
-  borderBottom: "1px solid #2f2f2f",
-  width: "100%",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "12px",
+    padding: "20px",
+    borderBottom: "1px solid #2f2f2f",
+    width: "100%",
+    borderRadius: "4px",
+    transition: "box-shadow 0.3s ease",
 };
 
-const inputStyle: React.CSSProperties = {
-  flex: 1,
-  background: "transparent",
-  color: "white",
-  border: "none",
-  fontSize: "20px",
-  outline: "none",
+const textareaStyle: React.CSSProperties = {
+    flex: 1,
+    background: "transparent",
+    color: "white",
+    border: "none",
+    fontSize: "20px",
+    outline: "none",
+    resize: "none",
+    overflow: "hidden",
+    lineHeight: "1.5",
+    fontFamily: "inherit",
 };
