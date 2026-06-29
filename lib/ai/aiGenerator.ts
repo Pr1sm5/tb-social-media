@@ -214,10 +214,12 @@ async function callGeminiAndParse(prompt: string, postId: string, retryCount = 0
 }
 
 function buildBotDescriptions(bots: Bot[], language: Language): string {
+    const label = language === "en" ? "Person" : "Person";
+    const typeLabel = language === "en" ? "Type" : "Typ";
     return bots
         .map(
             (bot, i) =>
-                `Person ${i + 1} (@${bot.botId}, Typ: ${bot.botType}):\n${bot.systemPrompt[language] ?? bot.systemPrompt.de}`
+                `${label} ${i + 1} (@${bot.botId}, ${typeLabel}: ${bot.botType}):\n${bot.systemPrompt[language] ?? bot.systemPrompt.de}`
         )
         .join("\n\n");
 }
@@ -244,6 +246,65 @@ The unwritten rules of the internet apply here:
 Respond in English.`,
 };
 
+// Textbausteine für den dynamisch zusammengebauten Teil des Prompts — zweisprachig
+const PROMPT_PARTS: Record<
+    Language,
+    {
+        posted: (userId: string) => string;
+        commentersIntro: string;
+        outputInstructions: string;
+        threadHeader: string;
+        threadEmpty: string;
+        threadRules: string;
+        threadExamples: string;
+        singleBotCharacterIntro: (botId: string) => string;
+        singleBotWriteComment: string;
+    }
+> = {
+    de: {
+        posted: (userId) => `@${userId} hat gepostet:`,
+        commentersIntro:
+            "Die folgenden Personen kommentieren diesen Post. Jede Person schreibt so wie sie ist — aus ihrem Charakter heraus, auf das Thema bezogen, auf dieser Platform.",
+        outputInstructions: `Antworte NUR mit einem JSON-Array, kein Text davor oder danach, keine Backticks.
+Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.`,
+        threadHeader: "Bisherige Kommentare im Thread:",
+        threadEmpty: "(Noch keine Kommentare)",
+        threadRules: `Die folgenden Personen steigen jetzt in diesen Thread ein. Wichtig:
+- Jede Person MUSS auf mindestens einen der bisherigen Kommentare eingehen — nicht nur auf den ursprünglichen Post.
+- Wenn jemand auf einen Kommentar antwortet, nennt er den Verfasser mit @username am Anfang, z.B. "@alex stimmt doch gar nicht..." oder "@infoWatch_DE das hab ich auch gelesen!"
+- Die Reaktionen sollen authentisch wirken — zustimmen, widersprechen, nachhaken, provozieren — je nach Charakter der Person.
+- Wer nichts Passendes im Thread findet, darf auch nur auf den Post reagieren — aber das sollte die Ausnahme sein.
+- Wenn es von einem Gleichnamingen Bot schon ein Kommentar existiert. Schreibe einen neuen und kopiere den Alten auf keinen Fall`,
+        threadExamples: `Beispiele wie Antworten aussehen können:
+- "@motivationsbro_kevin bro du hast so recht, genau das hab ich auch gedacht"
+- "@g4nSoderKr4nich99 typisch wieder so ein Kommentar lol"
+- "@infoWatch_DE hast du dafür auch eine Quelle? klingt komisch"`,
+        singleBotCharacterIntro: (botId) => `Du bist @${botId} auf dieser Platform. Dein Charakter:`,
+        singleBotWriteComment: "Schreib deinen Kommentar dazu — so wie du bist, auf dieser Platform.",
+    },
+    en: {
+        posted: (userId) => `@${userId} posted:`,
+        commentersIntro:
+            "The following people are commenting on this post. Each person writes the way they truly are — staying in character, reacting to the actual topic, on this platform.",
+        outputInstructions: `Respond ONLY with a JSON array, no text before or after, no backticks.
+No quotation marks inside "content" — use apostrophes instead.`,
+        threadHeader: "Previous comments in the thread:",
+        threadEmpty: "(No comments yet)",
+        threadRules: `The following people are now joining this thread. Important:
+- Each person MUST react to at least one of the existing comments — not just to the original post.
+- When someone replies to a comment, they mention the author with @username at the start, e.g. "@alex that's not even true..." or "@infoWatch_DE I read that too!"
+- The reactions should feel authentic — agreeing, disagreeing, pushing back, provoking — depending on each person's character.
+- If someone finds nothing relevant in the thread, they may react only to the post — but this should be the exception.
+- If a comment from a bot with the same name already exists, write a new one and never copy the old one.`,
+        threadExamples: `Examples of what replies could look like:
+- "@motivationsbro_kevin bro you're so right, that's exactly what I thought"
+- "@g4nSoderKr4nich99 typical, another comment like that lol"
+- "@infoWatch_DE do you have a source for that? sounds off"`,
+        singleBotCharacterIntro: (botId) => `You are @${botId} on this platform. Your character:`,
+        singleBotWriteComment: "Write your comment on it — staying true to who you are, on this platform.",
+    },
+};
+
 // ─────────────────────────────────────────────
 // Exports
 // ─────────────────────────────────────────────
@@ -256,18 +317,18 @@ export async function getAllBotComments(
     if (!userPost.content.trim()) throw new Error("Der Post darf nicht leer sein.");
 
     const selectedBots = selectBots(loadBots(), Math.min(Math.max(commentCount, 3), 5));
+    const t = PROMPT_PARTS[language];
 
     const prompt = `${PLATFORM_CONTEXT[language]}
 
-@${userPost.userId} hat gepostet:
+${t.posted(userPost.userId)}
 "${userPost.content}"
 
-Die folgenden Personen kommentieren diesen Post. Jede Person schreibt so wie sie ist — aus ihrem Charakter heraus, auf das Thema bezogen, auf dieser Platform.
+${t.commentersIntro}
 
 ${buildBotDescriptions(selectedBots, language)}
 
-Antworte NUR mit einem JSON-Array, kein Text davor oder danach, keine Backticks.
-Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.
+${t.outputInstructions}
 
 [
   { "botId": "...", "botType": "...", "content": "..." }
@@ -285,6 +346,7 @@ export async function getCommentsForPostAndComments(
     if (!userPost.content.trim()) throw new Error("Der Post darf nicht leer sein.");
 
     const selectedBots = selectBots(loadBots(), Math.min(Math.max(commentCount, 1), 5));
+    const t = PROMPT_PARTS[language];
 
     const commentThread = existingComments
         .map((c) => `@${c.userId}: "${c.content}"`)
@@ -292,28 +354,19 @@ export async function getCommentsForPostAndComments(
 
     const prompt = `${PLATFORM_CONTEXT[language]}
 
-@${userPost.userId} hat gepostet:
+${t.posted(userPost.userId)}
 "${userPost.content}"
 
-Bisherige Kommentare im Thread:
-${commentThread || "(Noch keine Kommentare)"}
+${t.threadHeader}
+${commentThread || t.threadEmpty}
 
-Die folgenden Personen steigen jetzt in diesen Thread ein. Wichtig:
-- Jede Person MUSS auf mindestens einen der bisherigen Kommentare eingehen — nicht nur auf den ursprünglichen Post.
-- Wenn jemand auf einen Kommentar antwortet, nennt er den Verfasser mit @username am Anfang, z.B. "@alex stimmt doch gar nicht..." oder "@infoWatch_DE das hab ich auch gelesen!"
-- Die Reaktionen sollen authentisch wirken — zustimmen, widersprechen, nachhaken, provozieren — je nach Charakter der Person.
-- Wer nichts Passendes im Thread findet, darf auch nur auf den Post reagieren — aber das sollte die Ausnahme sein.
-- Wenn es von einem Gleichnamingen Bot schon ein Kommentar existiert. Schreibe einen neuen und kopiere den Alten auf keinen Fall
+${t.threadRules}
 
-Beispiele wie Antworten aussehen können:
-- "@motivationsbro_kevin bro du hast so recht, genau das hab ich auch gedacht"
-- "@g4nSoderKr4nich99 typisch wieder so ein Kommentar lol"
-- "@infoWatch_DE hast du dafür auch eine Quelle? klingt komisch"
+${t.threadExamples}
 
 ${buildBotDescriptions(selectedBots, language)}
 
-Antworte NUR mit einem JSON-Array, kein Text davor oder danach, keine Backticks.
-Keine Anführungszeichen innerhalb von "content" — Apostrophe stattdessen.
+${t.outputInstructions}
 
 [
   { "botId": "...", "botType": "...", "content": "..." }
@@ -332,16 +385,18 @@ export async function getSingleBotComment(
     const bot = loadBots().find((b) => b.botId === botId);
     if (!bot) throw new Error(`Kein Bot mit der ID "${botId}" in bots.json gefunden.`);
 
+    const t = PROMPT_PARTS[language];
+
     const prompt = `${PLATFORM_CONTEXT[language]}
 
-Du bist @${bot.botId} auf dieser Platform. Dein Charakter: ${bot.systemPrompt[language] ?? bot.systemPrompt.de}
+${t.singleBotCharacterIntro(bot.botId)} ${bot.systemPrompt[language] ?? bot.systemPrompt.de}
 
-@${userPost.userId} hat gepostet:
+${t.posted(userPost.userId)}
 "${userPost.content}"
 
-Schreib deinen Kommentar dazu — so wie du bist, auf dieser Platform.
+${t.singleBotWriteComment}
 
-Antworte NUR mit einem JSON-Array, keine Backticks.
+${t.outputInstructions}
 
 [
   { "botId": "${bot.botId}", "botType": "${bot.botType}", "content": "..." }
