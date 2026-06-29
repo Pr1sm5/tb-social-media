@@ -14,13 +14,11 @@ export default function Header({ showBack = false }: HeaderProps) {
     function handleLogout() {
         logout();
         router.push("/");
-        window.location.reload();
     }
 
     function handleLanguage(lang: "de" | "en") {
         if (user?.language === lang) return;
         setLanguage(lang);
-        window.location.reload();
     }
 
     return (

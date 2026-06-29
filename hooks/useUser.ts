@@ -23,6 +23,7 @@ export function useUser() {
         try {
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
         } catch {}
+        window.location.reload()
     }
 
     function logout() {
@@ -30,6 +31,7 @@ export function useUser() {
         try {
             sessionStorage.removeItem(SESSION_KEY);
         } catch {}
+        window.location.reload()
     }
 
     // Sprache während der Session wechseln
@@ -40,6 +42,7 @@ export function useUser() {
         try {
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(updated));
         } catch {}
+        window.location.reload()
     }
 
     return { user, login, logout, ready, setLanguage };
