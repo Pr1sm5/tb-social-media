@@ -8,16 +8,13 @@ const SESSION_KEY = "logo_user";
 
 export function useUser() {
     const [user, setUser] = useState<User | null>(null);
-    const [ready, setReady] = useState(false); // verhindert kurzes Aufflackern des Overlays
+    const [ready, setReady] = useState(false);
 
-    // Beim Mount: User aus sessionStorage laden
     useEffect(() => {
         try {
             const stored = sessionStorage.getItem(SESSION_KEY);
             if (stored) setUser(JSON.parse(stored));
-        } catch {
-            // sessionStorage nicht verfügbar (SSR, private mode etc.)
-        }
+        } catch {}
         setReady(true);
     }, []);
 
@@ -35,5 +32,15 @@ export function useUser() {
         } catch {}
     }
 
-    return { user, login, logout, ready };
+    // Sprache während der Session wechseln
+    function setLanguage(lang: "de" | "en") {
+        if (!user) return;
+        const updated: User = { ...user, language: lang };
+        setUser(updated);
+        try {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(updated));
+        } catch {}
+    }
+
+    return { user, login, logout, ready, setLanguage };
 }

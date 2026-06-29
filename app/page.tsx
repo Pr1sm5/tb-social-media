@@ -15,7 +15,6 @@ import { PostComment } from "@/lib/types/postComment";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 
-
 export default function Page() {
     const router = useRouter();
     const { user, login, ready } = useUser();
@@ -29,10 +28,7 @@ export default function Page() {
 
     async function startInfoTimer() {
         setShowInfoBox(false);
-
-        setTimeout(() => {
-            setShowInfoBox(true);
-        }, 3 * 5 * 1000); // 3 Minuten
+        setTimeout(() => setShowInfoBox(true), 3 * 5 * 1000);
     }
 
     async function fetchPosts() {
@@ -51,14 +47,17 @@ export default function Page() {
             const res = await fetch("/api/posts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.username, content }),
+                body: JSON.stringify({
+                    userId: user.username,
+                    content,
+                    language: user.language ?? "de", // ← Sprache mitschicken
+                }),
             });
             const data = await res.json();
-            console.log(data);
             if (data.success) {
                 setPosts((prev) => [data.data, ...prev]);
                 startInfoTimer();
-                //router.push(`/post/${data.data.postId}`);
+                router.push(`/post/${data.data.postId}`);
             }
         } catch (err) {
             console.error("Fehler beim Erstellen:", err);
@@ -81,7 +80,11 @@ export default function Page() {
             const res = await fetch(`/api/posts/${postId}/comments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.username, content }),
+                body: JSON.stringify({
+                    userId: user.username,
+                    content,
+                    language: user.language ?? "de", // ← Sprache mitschicken
+                }),
             });
             const data = await res.json();
             if (data.success) {
@@ -156,8 +159,9 @@ export default function Page() {
                     </section>
                 </div>
             </main>
+
             {showInfoBox && (
-                <InfoBox text="Durch das Erstellen des kommentars wurde etwas ausgelöst. Mehrere Bots kommentieren unter deinem Post. Schau nach!" />
+                <InfoBox text="Durch das Erstellen des Kommentars wurde etwas ausgelöst. Mehrere Bots kommentieren unter deinem Post. Schau nach!" />
             )}
         </>
     );

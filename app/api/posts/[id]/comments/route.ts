@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCommentsByPostId, createComment } from "@/lib/services/comment.service";
 import { getPostById } from "@/lib/services/post.service";
 import { getCommentsForPostAndComments } from "@/lib/ai/aiGenerator";
+import { Language } from "@/lib/types/bot";
 
 // GET /api/posts/:id/comments
 export async function GET(
@@ -11,7 +12,6 @@ export async function GET(
 ) {
     const { id } = await context.params;
     const comments = getCommentsByPostId(id);
-
     return NextResponse.json({ success: true, data: comments });
 }
 
@@ -30,20 +30,22 @@ export async function POST(
         });
     }
 
+    // Sprache aus dem Request — Standard ist Deutsch
+    const language: Language = body.language === "en" ? "en" : "de";
+
     // 1. User-Kommentar speichern
     const comment = createComment({
         postId: id,
         userId: body.userId,
         content: body.content,
+        language: body.language
     });
 
     // 2. Bots reagieren im Hintergrund auf den neuen Thread-Stand
-    // (fire-and-forget — User bekommt sofort seine Antwort)
     const post = getPostById(id);
     if (post) {
         const existingComments = getCommentsByPostId(id);
-
-        getCommentsForPostAndComments(post, existingComments, 2)
+        getCommentsForPostAndComments(post, existingComments, 2, language)
             .catch((err) => console.error("Bot Follow-Up fehlgeschlagen:", err));
     }
 

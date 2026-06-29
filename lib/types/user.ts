@@ -3,4 +3,5 @@ export interface User {
     username: string;
     initials: string;
     color: string;
+    language: "de" | "en";
 }

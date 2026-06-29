@@ -7,7 +7,7 @@ import TextOutputComponent from "@/app/components/TextOutputComponent";
 import CommentComponent from "@/app/components/CommentComponent";
 import LoginOverlay from "@/app/components/LoginOverlay";
 import Header from "@/app/components/Header";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import InfoBox from "@/app/components/InfoBox";
 
@@ -109,23 +109,17 @@ export default function PostPage() {
         }
     }
 
-    async function startInfoTimer() {
-        setShowInfoBox(false);
-
-        setTimeout(() => {
-            setShowInfoBox(true);
-        }, 3 * 5 * 1000); // 3 Minuten
-    }
-
     async function loadData(postId: string) {
         setLoading(true);
         try {
             const [postRes, commentRes] = await Promise.all([
                 fetch(`/api/posts/${postId}`),
                 fetch(`/api/posts/${postId}/comments`),
-                
             ]);
-            startInfoTimer();
+
+            // InfoBox nach 15 Sekunden einblenden
+            setTimeout(() => setShowInfoBox(true), 15_000);
+
             const postData = await postRes.json();
             const commentData = await commentRes.json();
             if (postData.success) setPost(postData.data);
@@ -142,13 +136,16 @@ export default function PostPage() {
         const res = await fetch(`/api/posts/${id}/comments`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user.username, content: text }),
+            body: JSON.stringify({
+                userId: user.username,
+                content: text,
+                language: user.language ?? "de", // ← Sprache mitschicken
+            }),
         });
         const data = await res.json();
         if (data.success) {
             setComments((prev) => [data.data, ...prev]);
             setVisibleComments((prev) => [data.data, ...prev]);
-            //startInfoTimer();
             setCommentInput("");
         }
     }
@@ -192,9 +189,10 @@ export default function PostPage() {
                     )}
                 </div>
             </main>
+
             {showInfoBox && (
-                            <InfoBox text="Hier kommt später dein Infotext hin." />
-                        )}
+                <InfoBox text="Hier kommt später dein Infotext hin." />
+            )}
 
             <div style={footerStyle}>
                 <div style={footerInnerStyle}>
@@ -213,9 +211,9 @@ export default function PostPage() {
                         value={commentInput}
                         onChange={(e) => setCommentInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addComment(commentInput)}
-                        placeholder="Schreib einen Kommentar..."
+                        placeholder={user?.language === "en" ? "Write a comment..." : "Schreib einen Kommentar..."}
                         style={footerInputStyle}
-                        className="text-input"
+                        className="text-input comment-input-glow"
                     />
 
                     <button
@@ -223,7 +221,7 @@ export default function PostPage() {
                         style={{ padding: "8px 16px", fontSize: "14px", flexShrink: 0 }}
                         onClick={() => addComment(commentInput)}
                     >
-                        Post
+                        {user?.language === "en" ? "Post" : "Posten"}
                     </button>
                 </div>
             </div>

@@ -8,30 +8,55 @@ type HeaderProps = {
 };
 
 export default function Header({ showBack = false }: HeaderProps) {
-    const { user, logout } = useUser();
+    const { user, logout, setLanguage } = useUser();
     const router = useRouter();
+
+    function handleLogout() {
+        logout();
+        router.push("/");
+    }
 
     return (
         <header className="header">
             {showBack ? (
-                <button
-                    onClick={() => router.back()}
-                    style={pillBtnStyle}
-                >
+                <button onClick={() => router.back()} style={pillBtnStyle}>
                     ← Back
                 </button>
             ) : (
                 <div className="logo"><h1>LOGO</h1></div>
             )}
 
-            {/* For you / Following als Pill-Buttons */}
             <div style={navStyle}>
                 <button style={pillBtnStyle}>For you</button>
                 <button style={pillBtnStyle}>Following</button>
             </div>
 
             {user && (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "flex-end" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "flex-end" }}>
+
+                    {/* Flaggen-Toggle */}
+                    <button
+                        title="Deutsch"
+                        onClick={() => setLanguage("de")}
+                        style={{
+                            ...flagBtnStyle,
+                            opacity: user.language === "de" ? 1 : 0.35,
+                        }}
+                    >
+                        🇩🇪
+                    </button>
+                    <button
+                        title="English"
+                        onClick={() => setLanguage("en")}
+                        style={{
+                            ...flagBtnStyle,
+                            opacity: user.language === "en" ? 1 : 0.35,
+                        }}
+                    >
+                        🇬🇧
+                    </button>
+
+                    {/* Avatar */}
                     <div style={{
                         width: "34px", height: "34px", borderRadius: "50%",
                         background: user.color, display: "flex", alignItems: "center",
@@ -40,7 +65,8 @@ export default function Header({ showBack = false }: HeaderProps) {
                     }}>
                         {user.initials}
                     </div>
-                    <button style={pillBtnStyle} onClick={logout}>
+
+                    <button style={pillBtnStyle} onClick={handleLogout}>
                         Logout
                     </button>
                 </div>
@@ -58,6 +84,16 @@ const pillBtnStyle: React.CSSProperties = {
     fontSize: "14px",
     cursor: "pointer",
     transition: "background 0.15s ease, border-color 0.15s ease",
+};
+
+const flagBtnStyle: React.CSSProperties = {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "20px",
+    padding: "2px",
+    transition: "opacity 0.15s ease",
+    lineHeight: 1,
 };
 
 const navStyle: React.CSSProperties = {

@@ -14,4 +14,5 @@ export interface CreateCommentInput {
     content: string
     isBot? : boolean
     botType? : string
+    language? : string
 }
