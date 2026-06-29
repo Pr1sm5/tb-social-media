@@ -30,6 +30,7 @@ export function useUser() {
         try {
             sessionStorage.removeItem(SESSION_KEY);
         } catch {}
+        window.location.reload()
     }
 
     // Sprache während der Session wechseln

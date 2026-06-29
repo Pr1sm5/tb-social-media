@@ -2,14 +2,17 @@
 "use client";
 
 import { useInactivityLogout } from "@/hooks/useInactivityLogout";
+import {useUser} from "@/hooks/useUser"
 
 export function InactivityWarning() {
+    const { user, logout, setLanguage } = useUser();
+
     const { showWarning, stayActive } = useInactivityLogout({
-        warningAfterMs: 10 * 60 * 1000, // 10 Minuten
-        logoutAfterWarningMs: 60 * 1000, // + 1 Minute
+        warningAfterMs: 0.2 * 60 * 1000, // 10 Minuten
+        logoutAfterWarningMs: 0.2 * 60 * 1000, // + 1 Minute
         logoutEndpoint: "/api/auth/logout",
         onLogout: () => {
-            window.location.href = "/login";
+            logout()
         },
     });
 
