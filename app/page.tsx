@@ -15,6 +15,7 @@ import { PostComment } from "@/lib/types/postComment";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 
+
 export default function Page() {
     const router = useRouter();
     const { user, login, ready } = useUser();
@@ -23,12 +24,59 @@ export default function Page() {
     const [comments, setComments] = useState<Record<string, PostComment[]>>({});
     const [openComments, setOpenComments] = useState<string | null>(null);
     const [showInfoBox, setShowInfoBox] = useState(false);
+    type InfoBoxItem = {
+        text: string;
+        type?: "info" | "error" | "success" | "warning";
+    };
+    const [infoBoxes, setInfoBoxes] = useState<InfoBoxItem[]>([]);
+    //const [infoBoxes, setInfoBoxes] = useState<string[]>([]);
 
     useEffect(() => { fetchPosts(); }, []);
 
     async function startInfoTimer() {
         setShowInfoBox(false);
         setTimeout(() => setShowInfoBox(true), 3 * 5 * 1000);
+    }
+
+    function startInfoSequence() {
+        setInfoBoxes([]);
+
+        const events = [
+            {
+                delay: 15000,
+                data: {
+                    text: "Durch das Erstellen des Kommentars wurde etwas ausgelöst.",
+                    type: "warning" as const
+                }
+            },
+            {
+                delay: 25000,
+                data: {
+                    text: "Mehrere Bots kommentieren unter deinem Post.",
+                    type: "info" as const
+                }
+            },
+            {
+                delay: 35000,
+                data: {
+                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
+                    type: "error" as const
+                }
+            },
+            {
+                delay: 35000,
+                data: {
+                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
+                    type: "success" as const
+                }
+            }
+        ];
+
+        events.forEach(({ delay, data }) => {
+            setTimeout(() => {
+                setInfoBoxes(prev => [...prev, data]);
+            }, delay);
+        });
     }
 
     async function fetchPosts() {
@@ -54,9 +102,11 @@ export default function Page() {
                 }),
             });
             const data = await res.json();
+            console.log(data);
             if (data.success) {
                 setPosts((prev) => [data.data, ...prev]);
-                startInfoTimer();
+                //startInfoTimer();
+                startInfoSequence();
                 router.push(`/post/${data.data.postId}`);
             }
         } catch (err) {
@@ -159,10 +209,15 @@ export default function Page() {
                     </section>
                 </div>
             </main>
-
-            {showInfoBox && (
-                <InfoBox text="Durch das Erstellen des Kommentars wurde etwas ausgelöst. Mehrere Bots kommentieren unter deinem Post. Schau nach!" />
-            )}
+            <div className="info-container">
+                {infoBoxes.map((box, index) => (
+                    <InfoBox
+                        key={`${box.text}-${box.type}-${index}`}   // 🔥 FIX
+                        text={box.text}
+                        type={box.type}
+                    />
+                ))}
+            </div>
         </>
     );
 }
