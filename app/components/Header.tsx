@@ -8,7 +8,7 @@ type HeaderProps = {
 };
 
 export default function Header({ showBack = false }: HeaderProps) {
-    const { user, logout, setLanguage } = useUser();
+    const { user, logout } = useUser();
     const router = useRouter();
 
     function handleLogout() {
@@ -31,6 +31,7 @@ export default function Header({ showBack = false }: HeaderProps) {
                 <div className="logo"><h1>LOGO</h1></div>
             )}
 
+            {/* For you / Following als Pill-Buttons */}
             <div style={navStyle}>
                 <button style={pillBtnStyle}>For you</button>
                 <button style={pillBtnStyle}>Following</button>

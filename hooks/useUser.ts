@@ -3,10 +3,13 @@
 
 import { useState, useEffect } from "react";
 import { User } from "@/lib/types/user";
+import {router} from "next/client";
+import { useRouter } from "next/navigation";
 
 const SESSION_KEY = "logo_user";
 
 export function useUser() {
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [ready, setReady] = useState(false);
 
@@ -23,7 +26,8 @@ export function useUser() {
         try {
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
         } catch {}
-        window.location.reload()
+        router.push("/");
+        window.location.reload();
     }
 
     function logout() {
@@ -31,7 +35,8 @@ export function useUser() {
         try {
             sessionStorage.removeItem(SESSION_KEY);
         } catch {}
-        window.location.reload()
+        router.push("/");
+        window.location.reload();
     }
 
     // Sprache während der Session wechseln

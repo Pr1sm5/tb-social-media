@@ -8,8 +8,8 @@ export function InactivityWarning() {
     const { user, logout, setLanguage } = useUser();
 
     const { showWarning, stayActive } = useInactivityLogout({
-        warningAfterMs: 0.2 * 60 * 1000, // 10 Minuten
-        logoutAfterWarningMs: 0.2 * 60 * 1000, // + 1 Minute
+        warningAfterMs: 1 * 60 * 1000, // 10 Minuten
+        logoutAfterWarningMs: 1 * 60 * 1000, // + 1 Minute
         logoutEndpoint: "/api/auth/logout",
         onLogout: () => {
             logout()
