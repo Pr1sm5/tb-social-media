@@ -1,7 +1,7 @@
 "use client";
 
 import "./globals.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Texteingabefeld from "./components/TextInputComponent";
 import TextOutputComponent from "./components/TextOutputComponent";
@@ -15,67 +15,43 @@ import { PostComment } from "@/lib/types/postComment";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 
+type InfoBoxItem = {
+    text: string;
+    type?: "info" | "error" | "success" | "warning";
+};
 
 export default function Page() {
     const router = useRouter();
     const { user, login, ready } = useUser();
 
+    // Ref damit async Funktionen immer den aktuellen User lesen
+    const userRef = useRef(user);
+    useEffect(() => { userRef.current = user; }, [user]);
+
     const [posts, setPosts] = useState<Post[]>([]);
     const [comments, setComments] = useState<Record<string, PostComment[]>>({});
     const [openComments, setOpenComments] = useState<string | null>(null);
-    const [showInfoBox, setShowInfoBox] = useState(false);
-    type InfoBoxItem = {
-        text: string;
-        type?: "info" | "error" | "success" | "warning";
-    };
     const [infoBoxes, setInfoBoxes] = useState<InfoBoxItem[]>([]);
-    //const [infoBoxes, setInfoBoxes] = useState<string[]>([]);
 
     useEffect(() => { fetchPosts(); }, []);
 
-    async function startInfoTimer() {
-        setShowInfoBox(false);
-        setTimeout(() => setShowInfoBox(true), 3 * 5 * 1000);
-    }
-
-    function startInfoSequence() {
+    function startInfoSequence(lang: "de" | "en") {
         setInfoBoxes([]);
 
-        const events = [
-            {
-                delay: 15000,
-                data: {
-                    text: "Durch das Erstellen des Kommentars wurde etwas ausgelöst.",
-                    type: "warning" as const
-                }
-            },
-            {
-                delay: 25000,
-                data: {
-                    text: "Mehrere Bots kommentieren unter deinem Post.",
-                    type: "info" as const
-                }
-            },
-            {
-                delay: 35000,
-                data: {
-                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
-                    type: "error" as const
-                }
-            },
-            {
-                delay: 35000,
-                data: {
-                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
-                    type: "success" as const
-                }
-            }
+        const events: { delay: number; data: InfoBoxItem }[] = lang === "en" ? [
+            { delay: 15000, data: { text: "Something was triggered by creating the post.", type: "warning" } },
+            { delay: 25000, data: { text: "Multiple bots are commenting on your post.", type: "info" } },
+            { delay: 35000, data: { text: "Activity is rising unusually fast.", type: "error" } },
+            { delay: 45000, data: { text: "20% of social media traffic during global events comes from bots. (Nature, 2025)", type: "success" } },
+        ] : [
+            { delay: 15000, data: { text: "Durch das Erstellen des Posts wurde etwas ausgelöst.", type: "warning" } },
+            { delay: 25000, data: { text: "Mehrere Bots kommentieren unter deinem Post.", type: "info" } },
+            { delay: 35000, data: { text: "Die Aktivität steigt ungewöhnlich schnell an.", type: "error" } },
+            { delay: 45000, data: { text: "20% aller Social-Media-Kommentare stammen von Bots. (Nature, 2025)", type: "success" } },
         ];
 
         events.forEach(({ delay, data }) => {
-            setTimeout(() => {
-                setInfoBoxes(prev => [...prev, data]);
-            }, delay);
+            setTimeout(() => setInfoBoxes(prev => [...prev, data]), delay);
         });
     }
 
@@ -90,24 +66,25 @@ export default function Page() {
     }
 
     async function addPost(content: string) {
-        if (!user) return;
+        // Sprache aus Ref lesen — immer aktuell, nie stale
+        const currentUser = userRef.current;
+        if (!currentUser) return;
+        const lang = currentUser.language ?? "de";
+
         try {
             const res = await fetch("/api/posts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    userId: user.username,
+                    userId: currentUser.username,
                     content,
-                    language: user.language ?? "de", // ← Sprache mitschicken
+                    language: lang,
                 }),
             });
             const data = await res.json();
-            console.log(data);
             if (data.success) {
                 setPosts((prev) => [data.data, ...prev]);
-                //startInfoTimer();
-                startInfoSequence();
-                router.push(`/post/${data.data.postId}`);
+                startInfoSequence(lang);
             }
         } catch (err) {
             console.error("Fehler beim Erstellen:", err);
@@ -125,15 +102,17 @@ export default function Page() {
     }
 
     async function addComment(postId: string, content: string) {
-        if (!user) return;
+        const currentUser = userRef.current;
+        if (!currentUser) return;
+
         try {
             const res = await fetch(`/api/posts/${postId}/comments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    userId: user.username,
+                    userId: currentUser.username,
                     content,
-                    language: user.language ?? "de", // ← Sprache mitschicken
+                    language: currentUser.language ?? "de",
                 }),
             });
             const data = await res.json();
@@ -167,6 +146,12 @@ export default function Page() {
         }
     }
 
+    function handlePostClick(e: React.MouseEvent, postId: string) {
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 0) return;
+        router.push(`/post/${postId}`);
+    }
+
     if (!ready) return null;
 
     return (
@@ -186,7 +171,8 @@ export default function Page() {
                             <div key={post.postId}>
                                 <div
                                     className="post-card"
-                                    onClick={() => router.push(`/post/${post.postId}`)}
+                                    style={{ cursor: "pointer" }}
+                                    onClick={(e) => handlePostClick(e, post.postId)}
                                 >
                                     <TextOutputComponent
                                         text={post.content}
@@ -209,10 +195,10 @@ export default function Page() {
                     </section>
                 </div>
             </main>
+
             <div className="info-container">
                 {infoBoxes.map((box, index) => (
                     <InfoBox
-                        key={`${box.text}-${box.type}-${index}`}   // 🔥 FIX
                         text={box.text}
                         type={box.type}
                     />

@@ -7,11 +7,31 @@ import TextOutputComponent from "@/app/components/TextOutputComponent";
 import CommentComponent from "@/app/components/CommentComponent";
 import LoginOverlay from "@/app/components/LoginOverlay";
 import Header from "@/app/components/Header";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import InfoBox from "@/app/components/InfoBox";
 
 const NEW_POST_THRESHOLD_MS = 30_000;
+
+type InfoBoxItem = {
+    text: string;
+    type?: "info" | "error" | "success" | "warning";
+};
+
+const INFO_EVENTS: Record<"de" | "en", { delay: number; data: InfoBoxItem }[]> = {
+    de: [
+        { delay: 15000, data: { text: "Durch das Erstellen deines Posts wurde etwas ausgelöst.", type: "warning" } },
+        { delay: 25000, data: { text: "Mehrere Bots kommentieren unter deinem Post.", type: "info" } },
+        { delay: 35000, data: { text: "Die Aktivität steigt ungewöhnlich schnell an.", type: "error" } },
+        { delay: 45000, data: { text: "20% aller Social-Media-Kommentare stammen von Bots. (Nature Scientific Reports, 2025)", type: "success" } },
+    ],
+    en: [
+        { delay: 15000, data: { text: "Something was triggered by creating your post.", type: "warning" } },
+        { delay: 25000, data: { text: "Multiple bots are commenting on your post.", type: "info" } },
+        { delay: 35000, data: { text: "Activity is rising unusually fast.", type: "error" } },
+        { delay: 45000, data: { text: "20% of all social media comments come from bots. (Nature Scientific Reports, 2025)", type: "success" } },
+    ],
+};
 
 function isNewPost(timestamp: string): boolean {
     return Date.now() - new Date(timestamp).getTime() < NEW_POST_THRESHOLD_MS;
@@ -43,6 +63,10 @@ export default function PostPage() {
     const params = useParams();
     const { user, login, ready } = useUser();
 
+    // Ref damit addComment immer die aktuelle Sprache liest — nie stale
+    const userRef = useRef(user);
+    useEffect(() => { userRef.current = user; }, [user]);
+
     const id = params?.id as string | undefined;
 
     const [post, setPost] = useState<Post | null>(null);
@@ -50,18 +74,20 @@ export default function PostPage() {
     const [visibleComments, setVisibleComments] = useState<PostComment[]>([]);
     const [loading, setLoading] = useState(true);
     const [commentInput, setCommentInput] = useState("");
-    const [showInfoBox, setShowInfoBox] = useState(false);
-    type InfoBoxItem = {
-        text: string;
-        type?: "info" | "error" | "success" | "warning";
-    };
     const [infoBoxes, setInfoBoxes] = useState<InfoBoxItem[]>([]);
+
     const hasStarted = useRef(false);
-
-
-
     const commentsRef = useRef<PostComment[]>([]);
     commentsRef.current = comments;
+
+    // Ref auf das letzte Kommentar-Element für Auto-Scroll
+    const bottomRef = useRef<HTMLDivElement>(null);
+
+    // Auto-Scroll wenn neuer Kommentar sichtbar wird
+    useEffect(() => {
+        if (visibleComments.length === 0) return;
+        bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, [visibleComments.length]);
 
     useEffect(() => {
         if (comments.length === 0) return;
@@ -117,55 +143,13 @@ export default function PostPage() {
         }
     }
 
-
-    async function startInfoTimer() {
-        setShowInfoBox(false);
-
-        setTimeout(() => {
-            setShowInfoBox(true);
-        }, 3 * 5 * 1000); // 3 Minuten
-    }
-
-    function startInfoSequence() {
+    function startInfoSequence(lang: "de" | "en") {
         if (hasStarted.current) return;
         hasStarted.current = true;
         setInfoBoxes([]);
 
-        const events = [
-            {
-                delay: 15000,
-                data: {
-                    text: "Durch das Erstellen des Kommentars wurde etwas ausgelöst.",
-                    type: "warning" as const
-                }
-            },
-            {
-                delay: 25000,
-                data: {
-                    text: "Mehrere Bots kommentieren unter deinem Post.",
-                    type: "info" as const
-                }
-            },
-            {
-                delay: 35000,
-                data: {
-                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
-                    type: "error" as const
-                }
-            },
-            {
-                delay: 45000,
-                data: {
-                    text: "Die Aktivität steigt ungewöhnlich schnell an.",
-                    type: "success" as const
-                }
-            }
-        ];
-
-        events.forEach(({ delay, data }) => {
-            setTimeout(() => {
-                setInfoBoxes(prev => [...prev, data]);
-            }, delay);
+        INFO_EVENTS[lang].forEach(({ delay, data }) => {
+            setTimeout(() => setInfoBoxes(prev => [...prev, data]), delay);
         });
     }
 
@@ -175,13 +159,17 @@ export default function PostPage() {
             const [postRes, commentRes] = await Promise.all([
                 fetch(`/api/posts/${postId}`),
                 fetch(`/api/posts/${postId}/comments`),
-                
             ]);
-            //startInfoTimer();
-            startInfoSequence();
+
             const postData = await postRes.json();
             const commentData = await commentRes.json();
-            if (postData.success) setPost(postData.data);
+
+            if (postData.success) {
+                setPost(postData.data);
+                if (isNewPost(postData.data.timestamp)) {
+                    startInfoSequence(userRef.current?.language ?? "de");
+                }
+            }
             if (commentData.success) setComments(commentData.data);
         } catch (err) {
             console.error("ERROR loading post:", err);
@@ -191,21 +179,23 @@ export default function PostPage() {
     }
 
     async function addComment(text: string) {
-        if (!user || !text.trim()) return;
+        // Sprache aus Ref lesen — immer aktuell
+        const currentUser = userRef.current;
+        if (!currentUser || !text.trim()) return;
+
         const res = await fetch(`/api/posts/${id}/comments`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                userId: user.username,
+                userId: currentUser.username,
                 content: text,
-                language: user.language ?? "de", // ← Sprache mitschicken
+                language: currentUser.language ?? "de",
             }),
         });
         const data = await res.json();
         if (data.success) {
             setComments((prev) => [data.data, ...prev]);
             setVisibleComments((prev) => [data.data, ...prev]);
-            //startInfoTimer();
             setCommentInput("");
         }
     }
@@ -218,6 +208,8 @@ export default function PostPage() {
     }
 
     if (!ready) return null;
+
+    const lang = userRef.current?.language ?? "de";
 
     return (
         <>
@@ -237,7 +229,6 @@ export default function PostPage() {
                                 username={post.userId}
                                 onDelete={() => {}}
                             />
-
                             <CommentComponent
                                 comments={visibleComments}
                                 onAddComment={addComment}
@@ -245,14 +236,17 @@ export default function PostPage() {
                                 currentUsername={user?.username}
                                 hideInput
                             />
+                            {/* Anchor für Auto-Scroll */}
+                            <div ref={bottomRef} style={{ height: 1 }} />
                         </>
                     )}
                 </div>
             </main>
+
             <div className="info-container">
                 {infoBoxes.map((box, index) => (
                     <InfoBox
-                        key={`${box.text}-${box.type}-${index}`}   // 🔥 FIX
+                        key={`${box.text}-${box.type}-${index}`}
                         text={box.text}
                         type={box.type}
                     />
@@ -271,22 +265,20 @@ export default function PostPage() {
                             {user.initials}
                         </div>
                     )}
-
                     <input
                         value={commentInput}
                         onChange={(e) => setCommentInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addComment(commentInput)}
-                        placeholder={user?.language === "en" ? "Write a comment..." : "Schreib einen Kommentar..."}
+                        placeholder={lang === "en" ? "Write a comment..." : "Schreib einen Kommentar..."}
                         style={footerInputStyle}
                         className="text-input comment-input-glow"
                     />
-
                     <button
                         className="send-btn"
                         style={{ padding: "8px 16px", fontSize: "14px", flexShrink: 0 }}
                         onClick={() => addComment(commentInput)}
                     >
-                        {user?.language === "en" ? "Post" : "Posten"}
+                        {lang === "en" ? "Post" : "Posten"}
                     </button>
                 </div>
             </div>

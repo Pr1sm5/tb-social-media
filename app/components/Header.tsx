@@ -14,6 +14,13 @@ export default function Header({ showBack = false }: HeaderProps) {
     function handleLogout() {
         logout();
         router.push("/");
+        window.location.reload();
+    }
+
+    function handleLanguage(lang: "de" | "en") {
+        if (user?.language === lang) return;
+        setLanguage(lang);
+        window.location.reload();
     }
 
     return (
@@ -37,21 +44,15 @@ export default function Header({ showBack = false }: HeaderProps) {
                     {/* Flaggen-Toggle */}
                     <button
                         title="Deutsch"
-                        onClick={() => setLanguage("de")}
-                        style={{
-                            ...flagBtnStyle,
-                            opacity: user.language === "de" ? 1 : 0.35,
-                        }}
+                        onClick={() => handleLanguage("de")}
+                        style={{ ...flagBtnStyle, opacity: user.language === "de" ? 1 : 0.35 }}
                     >
                         🇩🇪
                     </button>
                     <button
                         title="English"
-                        onClick={() => setLanguage("en")}
-                        style={{
-                            ...flagBtnStyle,
-                            opacity: user.language === "en" ? 1 : 0.35,
-                        }}
+                        onClick={() => handleLanguage("en")}
+                        style={{ ...flagBtnStyle, opacity: user.language === "en" ? 1 : 0.35 }}
                     >
                         🇬🇧
                     </button>

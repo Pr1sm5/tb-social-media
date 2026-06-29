@@ -69,6 +69,7 @@ export default function LoginOverlay({ onLogin }: Props) {
             color: generateColor(trimmed),
             language,
         });
+        window.location.reload();
     }
 
     return (
