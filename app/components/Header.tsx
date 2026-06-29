@@ -8,7 +8,7 @@ type HeaderProps = {
 };
 
 export default function Header({ showBack = false }: HeaderProps) {
-    const { user, logout } = useUser();
+    const { user, logout , setLanguage } = useUser();
     const router = useRouter();
 
     function handleLogout() {
