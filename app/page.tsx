@@ -179,6 +179,7 @@ export default function Page() {
                                         name={post.userId}
                                         username={post.userId}
                                         onDelete={() => deletePost(post.postId)}
+                                        commentCount={(post as Post & { commentCount?: number }).commentCount ?? 0}
                                     />
                                 </div>
 

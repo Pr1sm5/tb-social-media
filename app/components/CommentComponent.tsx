@@ -58,14 +58,6 @@ export default function CommentComponent({ comments, onAddComment, onDeleteComme
 
                         <p style={text}>{highlightMentions(c.content)}</p>
 
-                        <div style={actionsStyle}>
-                            <button className="icon-btn comment" onClick={(e) => e.stopPropagation()}>💬</button>
-                            <button className="icon-btn like" onClick={(e) => e.stopPropagation()}>❤️</button>
-                            <button
-                                className="icon-btn delete"
-                                onClick={(e) => { e.stopPropagation(); onDeleteComment(c.commentId); }}
-                            >🗑</button>
-                        </div>
                     </div>
                 ))}
             </div>

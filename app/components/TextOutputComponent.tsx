@@ -6,6 +6,7 @@ type TextOutputProps = {
     username: string;
     onDelete: () => void;
     avatarComponent?: ReactNode;
+    commentCount?: number;
 };
 
 function generateColor(username: string): string {
@@ -49,7 +50,7 @@ function InitialsAvatar({ username }: { username: string }) {
     );
 }
 
-export default function TextOutputComponent({ text, name, username, onDelete, avatarComponent }: TextOutputProps) {
+export default function TextOutputComponent({ text, name, username, onDelete, avatarComponent, commentCount = 0 }: TextOutputProps) {
     return (
         <div style={containerStyle} className="post-card">
 
@@ -64,13 +65,8 @@ export default function TextOutputComponent({ text, name, username, onDelete, av
             <p style={textStyle}>{highlightMentions(text)}</p>
 
             <div style={actionsStyle}>
-                <button className="icon-btn comment">💬</button>
-                <button className="icon-btn like">❤️</button>
-                <button
-                    className="icon-btn delete"
-                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                >
-                    🗑
+                <button className="icon-btn comment">
+                    💬 {commentCount > 0 && <span style={countStyle}>{commentCount}</span>}
                 </button>
             </div>
 
@@ -103,4 +99,10 @@ const actionsStyle: React.CSSProperties = {
     display: "flex",
     gap: "4px",
     marginTop: "10px",
+};
+
+const countStyle: React.CSSProperties = {
+    fontSize: "13px",
+    color: "#888",
+    marginLeft: "2px",
 };

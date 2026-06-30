@@ -11,7 +11,7 @@ import Header from "@/app/components/Header";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import InfoBox from "@/app/components/InfoBox";
-import { INFO_EVENTS2, InfoBoxItem2 } from "@/lib/infoTexts/infoTexts2";
+import { INFO_EVENTS2, InfoBoxItem } from "@/lib/infoTexts/infoTexts2";
 
 
 const NEW_POST_THRESHOLD_MS = 30_000;
