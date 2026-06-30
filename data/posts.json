@@ -418,7 +418,6 @@
     "timestamp": "2026-06-29T14:16:39.771Z"
   },
   {
-<<<<<<< HEAD
     "postId": "3a20fb39-f042-4bc2-a9a6-bc93de83af1c",
     "userId": "asedassads",
     "content": "Kann es mal wieder kälter werden bitte",
@@ -445,7 +444,8 @@
     "content": "can u speak in english pls",
     "language": "en",
     "timestamp": "2026-06-29T14:44:48.594Z"
-=======
+  },
+  {
     "postId": "695adb0a-4a1d-4b4d-a7ad-cca6789cb5d4",
     "userId": "312",
     "content": "ASDsadas",
@@ -458,6 +458,12 @@
     "content": "ABC 123 TEST",
     "language": "de",
     "timestamp": "2026-06-29T14:56:26.098Z"
->>>>>>> origin/Vincent
+  },
+  {
+    "postId": "0b7cc737-8706-40c2-9b7f-2df00e90c0e7",
+    "userId": "1232131",
+    "content": "regen ist blöd",
+    "language": "de",
+    "timestamp": "2026-06-30T19:17:14.013Z"
   }
 ]

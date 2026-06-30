@@ -8,11 +8,9 @@ type HeaderProps = {
 };
 
 export default function Header({ showBack = false }: HeaderProps) {
-<<<<<<< HEAD
-    const { user, logout , setLanguage } = useUser();
-=======
+
     const { user, logout, setLanguage } = useUser();
->>>>>>> origin/Vincent
+
     const router = useRouter();
 
     function handleLogout() {
