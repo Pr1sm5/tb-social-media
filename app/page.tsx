@@ -155,13 +155,15 @@ export default function Page() {
 
     if (!ready) return null;
 
+    const lang = userRef.current?.language ?? "de";
+
     return (
         <>
             {!user && <LoginOverlay onLogin={login} />}
 
             <Header />
 
-            <main>
+            <main style={{ paddingBottom: "80px" }}>
                 <div className="feed">
                     <section>
                         <Texteingabefeld onSend={addPost} />
@@ -180,6 +182,8 @@ export default function Page() {
                                         name={post.userId}
                                         username={post.userId}
                                         onDelete={() => deletePost(post.postId)}
+                                        commentCount={(post as Post & { commentCount?: number }).commentCount ?? 0}
+                                        timestamp={post.timestamp}
                                     />
                                 </div>
 
@@ -206,6 +210,58 @@ export default function Page() {
                     />
                 ))}
             </div>
+
+            {/* Sticky Footer — ohne Kommentarfunktion, mit Link zur Read-More-Seite */}
+            <div style={footerStyle}>
+                <div style={footerInnerStyle}>
+                    <span style={footerTextStyle}>
+                        {lang === "en" ? "Curious what this is about?" : "Neugierig, was dahinter steckt?"}
+                    </span>
+                    <button
+                        className="send-btn"
+                        style={pillBtnStyle}
+                        onClick={() => router.push("/read-more")}
+                    >
+                        {lang === "en" ? "Read more" : "Mehr erfahren"}
+                    </button>
+                </div>
+            </div>
         </>
     );
 }
+
+const footerStyle: React.CSSProperties = {
+    position: "fixed",
+    bottom: 0, left: 0, right: 0,
+    background: "#000",
+    borderTop: "1px solid #2f2f2f",
+    zIndex: 100,
+    backdropFilter: "blur(12px)",
+};
+
+const footerInnerStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "10px",
+    padding: "14px 20px",
+    maxWidth: "600px",
+    margin: "0 auto",
+};
+
+const footerTextStyle: React.CSSProperties = {
+    color: "#888",
+    fontSize: "14px",
+};
+
+const pillBtnStyle: React.CSSProperties = {
+    padding: "8px 20px",
+    borderRadius: "999px",
+    border: "1px solid #333",
+    background: "transparent",
+    color: "white",
+    fontSize: "14px",
+    cursor: "pointer",
+    flexShrink: 0,
+    transition: "background 0.15s ease, border-color 0.15s ease",
+};
