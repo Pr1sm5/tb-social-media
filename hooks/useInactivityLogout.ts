@@ -12,6 +12,12 @@ interface UseInactivityLogoutOptions {
     logoutEndpoint?: string;
     /** Wird nach erfolgreichem Logout aufgerufen (z.B. Redirect) */
     onLogout?: () => void;
+    /**
+     * Ob der Hook überhaupt aktiv sein soll, z.B. user != null.
+     * Solange false: keine Timer, keine Warnung, kein Logout-Call.
+     * Standard: true (Hook läuft immer, wie bisher)
+     */
+    isAuthenticated?: boolean;
 }
 
 const DEFAULT_WARNING_MS = 10 * 60 * 1000; // 10 Minuten
@@ -32,6 +38,7 @@ export function useInactivityLogout(options: UseInactivityLogoutOptions = {}) {
         logoutAfterWarningMs = DEFAULT_LOGOUT_MS,
         logoutEndpoint = "/api/auth/logout",
         onLogout,
+        isAuthenticated = true,
     } = options;
 
     const [showWarning, setShowWarning] = useState(false);
@@ -45,6 +52,8 @@ export function useInactivityLogout(options: UseInactivityLogoutOptions = {}) {
     }, []);
 
     const performLogout = useCallback(async () => {
+        if (!isAuthenticated) return;
+
         try {
             await fetch(logoutEndpoint, { method: "POST" });
         } catch (error) {
@@ -53,10 +62,13 @@ export function useInactivityLogout(options: UseInactivityLogoutOptions = {}) {
             setShowWarning(false);
             onLogout?.();
         }
-    }, [logoutEndpoint, onLogout]);
+    }, [logoutEndpoint, onLogout, isAuthenticated]);
 
     const startTimers = useCallback(() => {
         clearTimers();
+
+        // Kein eingeloggter User -> nichts zu überwachen
+        if (!isAuthenticated) return;
 
         warningTimerRef.current = setTimeout(() => {
             setShowWarning(true);
@@ -65,7 +77,7 @@ export function useInactivityLogout(options: UseInactivityLogoutOptions = {}) {
                 performLogout();
             }, logoutAfterWarningMs);
         }, warningAfterMs);
-    }, [clearTimers, warningAfterMs, logoutAfterWarningMs, performLogout]);
+    }, [clearTimers, warningAfterMs, logoutAfterWarningMs, performLogout, isAuthenticated]);
 
     // Vom User aufgerufen wenn er auf "Ich bin noch da" klickt
     const stayActive = useCallback(() => {
@@ -74,13 +86,22 @@ export function useInactivityLogout(options: UseInactivityLogoutOptions = {}) {
     }, [startTimers]);
 
     const handleActivity = useCallback(() => {
+        if (!isAuthenticated) return;
+
         // Während die Warnung angezeigt wird, soll reine Mausbewegung sie NICHT
         // automatisch wegklicken — der User muss bewusst bestätigen.
         if (showWarning) return;
         startTimers();
-    }, [showWarning, startTimers]);
+    }, [isAuthenticated, showWarning, startTimers]);
 
     useEffect(() => {
+        if (!isAuthenticated) {
+            // User nicht (mehr) angemeldet -> alles zurücksetzen, nichts überwachen
+            clearTimers();
+            setShowWarning(false);
+            return;
+        }
+
         startTimers();
 
         ACTIVITY_EVENTS.forEach((event) =>
@@ -94,7 +115,7 @@ export function useInactivityLogout(options: UseInactivityLogoutOptions = {}) {
             );
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [handleActivity]);
+    }, [isAuthenticated, handleActivity]);
 
     return { showWarning, stayActive, logoutNow: performLogout };
 }

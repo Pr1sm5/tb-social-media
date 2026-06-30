@@ -9,7 +9,7 @@ export const INFO_EVENTS: Record<
 > = {
   en: [
     {
-      delay: 15000,
+      delay: 5000,
       data: {
         type: "warning",
         text: "The comments you saw were generated automatically to demonstrate how AI can influence social media discussions."

@@ -1,11 +1,11 @@
-export type InfoBoxItem2 = {
+export type InfoBoxItem = {
   text: string;
   type?: "info" | "error" | "success" | "warning";
 };
 
 export const INFO_EVENTS2: Record<
-  "de" | "en",
-  { delay: number; data: InfoBoxItem2 }[]
+    "de" | "en",
+    { delay: number; data: InfoBoxItem }[]
 > = {
   en: [
     {
@@ -99,7 +99,84 @@ export const INFO_EVENTS2: Record<
       delay: 5000,
       data: {
         type: "warning",
-        text: "Klener Test"
+        text: "Die Kommentare, die du gesehen hast, wurden automatisch generiert, um zu demonstrieren, wie KI Diskussionen in sozialen Medien beeinflussen kann."
+      }
+    },
+    {
+      delay: 15000,
+      data: {
+        type: "info",
+        text: "KI kann tausende realistische Kommentare in Sekunden erzeugen. Wenn viele dieselbe Meinung unterstützen, kann der Eindruck entstehen, dass 'alle zustimmen', selbst wenn das nicht stimmt."
+      }
+    },
+    {
+      delay: 30000,
+      data: {
+        type: "warning",
+        text: "Das bedeutet nicht, dass KI immer zur Manipulation eingesetzt wird. Allerdings können automatisierte Accounts Sichtweisen verstärken, Fehlinformationen verbreiten und öffentliche Debatten verzerren."
+      }
+    },
+    {
+      delay: 45000,
+      data: {
+        type: "success",
+        text: "Im Jahr 2023 warnten hunderte KI-Forschende davor, dass der großflächige Missbrauch von KI als globale Priorität behandelt werden sollte."
+      }
+    },
+    {
+      delay: 60000,
+      data: {
+        type: "success",
+        text: "Eine Metaanalyse von 44 Studien zeigt, dass Online-Kommentare beeinflussen, wie Menschen Informationen bewerten, was sie glauben, wie sie fühlen und ob sie ähnliche Meinungen äußern (Chen & Xia, 2024)."
+      }
+    },
+    {
+      delay: 60000,
+      data: {
+        type: "success",
+        text: "Wenn viele Kommentare dieselbe Meinung vertreten, nehmen Menschen dies oft als Mehrheitsmeinung wahr. Dies wird als sozialer Einfluss, soziale Normen und Bandwagon-Effekt bezeichnet."
+      }
+    },
+    {
+      delay: 60000,
+      data: {
+        type: "success",
+        text: "Studien zeigen, dass bereits eine kleine Anzahl von Social Bots die Wahrnehmung von Online-Diskussionen verändern kann. Durch wiederholtes Promoten derselben Sichtweise entsteht der Eindruck, dass eine Meinung weit verbreitet ist, selbst wenn sie es nicht ist (Su et al., 2020; Hegelich & Janetzko, 2019)."
+      }
+    },
+    {
+      delay: 60000,
+      data: {
+        type: "success",
+        text: "Bots verändern Meinungen oft nicht durch bessere Argumente, sondern dadurch, wie Menschen die öffentliche Meinung wahrnehmen."
+      }
+    },
+    {
+      delay: 60000,
+      data: {
+        type: "success",
+        text: "Moderne KI kann realistische, menschenähnliche Kommentare in großem Maßstab erzeugen und an verschiedene Zielgruppen anpassen. Forschung warnt, dass KI-gesteuerte Bots überzeugende Inhalte generieren, Nutzer imitieren, Narrative verstärken und den Eindruck weit verbreiteter Zustimmung erzeugen können (Baltezarević et al.). Dies macht großflächige Manipulation einfacher, schneller und günstiger als je zuvor."
+      }
+    },
+    {
+      delay: 60000,
+      data: {
+        type: "success",
+        text: "Menschen gehen oft davon aus, dass Kommentarspalten die Meinung vieler unabhängiger Nutzer widerspiegeln. Wenn jedoch Kommentare KI-generiert sind, spiegeln Diskussionen möglicherweise nicht mehr die Realität wider. Studien zeigen, dass Kommentare beeinflussen, was Menschen glauben, vertrauen, fühlen und ob sie ähnliche Meinungen äußern (Chen & Xia, 2024)."
+      }
+    },
+    {
+      delay: 60000,
+      data: {
+        type: "success",
+        text: "KI-generierte Kommentare können somit die wahrgenommene öffentliche Meinung formen. Was kann man daraus mitnehmen? Viele ähnliche Kommentare bedeuten nicht automatisch eine echte Mehrheitsmeinung. Online-Diskussionen können durch koordinierte automatisierte Aktivitäten beeinflusst werden. KI kann Meinungen populärer erscheinen lassen, als sie tatsächlich sind. Wahrgenommene Zustimmung ist nicht immer echte Zustimmung."
+      }
+    },
+    {
+      delay: 60000,
+      data: {
+        type: "success",
+        text: "Wer steckt hinter diesen Kommentaren? Sind es echte Menschen oder koordinierte automatisierte Accounts?"
       }
     }
   ]

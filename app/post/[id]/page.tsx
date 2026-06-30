@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Post } from "@/lib/types/post";
 import { PostComment } from "@/lib/types/postComment";
 import TextOutputComponent from "@/app/components/TextOutputComponent";
@@ -10,7 +11,7 @@ import Header from "@/app/components/Header";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import InfoBox from "@/app/components/InfoBox";
-import { INFO_EVENTS2, InfoBoxItem2 } from "@/lib/infoTexts/infoTexts2";
+import { INFO_EVENTS2, InfoBoxItem } from "@/lib/infoTexts/infoTexts2";
 
 
 const NEW_POST_THRESHOLD_MS = 30_000;
@@ -61,10 +62,24 @@ export default function PostPage() {
     const [commentInput, setCommentInput] = useState("");
     const [showInfoBox, setShowInfoBox] = useState(false);
     type InfoBoxItem = {
+        id: string;
         text: string;
         type?: "info" | "error" | "success" | "warning";
     };
     const [infoBoxes, setInfoBoxes] = useState<InfoBoxItem[]>([]);
+
+    // Wie lange eine Box sichtbar bleibt, bevor sie entfernt wird
+    // (das Fade-/Slide-Out beim Entfernen übernimmt automatisch AnimatePresence)
+    const INFO_BOX_VISIBLE_MS = 8000;
+
+    function addInfoBox(data: { text: string; type?: InfoBoxItem["type"] }) {
+        const boxId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        setInfoBoxes((prev) => [...prev, { id: boxId, ...data }]);
+
+        setTimeout(() => {
+            setInfoBoxes((prev) => prev.filter((b) => b.id !== boxId));
+        }, INFO_BOX_VISIBLE_MS);
+    }
     const [footerShake, setFooterShake] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
 
@@ -162,7 +177,7 @@ export default function PostPage() {
 
             setTimeout(() => {
                 console.log("Showing:", data.text);
-                setInfoBoxes(prev => [...prev, data]);
+                addInfoBox(data);
             }, delay);
         });
     }
@@ -260,13 +275,20 @@ export default function PostPage() {
             </main>
 
             <div className="info-container">
-                {infoBoxes.map((box, index) => (
-                    <InfoBox
-                        key={`${box.text}-${box.type}-${index}`}
-                        text={box.text}
-                        type={box.type}
-                    />
-                ))}
+                <AnimatePresence>
+                    {infoBoxes.map((box) => (
+                        <motion.div
+                            key={box.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, x: 40 }}
+                            transition={{ duration: 0.4, ease: "easeInOut" }}
+                        >
+                            <InfoBox text={box.text} type={box.type} />
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
             </div>
 
             {/* Sticky Footer — mit Shake-Animation bei neuem Kommentar */}

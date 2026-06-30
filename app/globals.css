@@ -1,168 +1,179 @@
 @import "tailwindcss";
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --background: #ffffff;
+    --foreground: #171717;
+
+    /* Muss zur max-width von .feed passen */
+    --feed-width: 780px;
+    /* Breite der Info-Boxen: min 240px, bevorzugt 18vw, max 340px */
+    --info-box-width: clamp(240px, 18vw, 340px);
 }
 
 body {
-  margin: 0;
-  min-height: 100vh;
+    margin: 0;
+    min-height: 100vh;
 
-  background: #000;
-  color: white;
+    background: #000;
+    color: white;
 
-  font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 main {
-  width: 100%;
-  min-height: 100vh;
+    width: 100%;
+    min-height: 100vh;
 
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 
-  background: #000;
+    background: #000;
 }
 
 .header {
-  height: 70px;
+    height: 70px;
 
-  display: grid;
-  grid-template-columns: 250px 1fr 250px;
+    display: grid;
+    grid-template-columns: 250px 1fr 250px;
 
-  align-items: center;
+    align-items: center;
 
-  background: #000;
+    background: #000;
 
-  border-bottom: 1px solid #222;
+    border-bottom: 1px solid #222;
 
-  padding: 0 20px;
+    padding: 0 20px;
 }
 
 /* LOGO */
 
 .logo {
-  justify-self: start;
+    justify-self: start;
 }
 
 .logo h1 {
-  font-size: 32px;
-  font-weight: 800;
-  color: white;
-  cursor: pointer;
+    font-size: 32px;
+    font-weight: 800;
+    color: white;
+    cursor: pointer;
 }
 
 .logo h1:hover {
-  opacity: 0.8;
+    opacity: 0.8;
 }
 
 .header-nav {
-  justify-self: center;
+    justify-self: center;
 
-  display: flex;
+    display: flex;
 
-  border: 1px solid #111;
+    border: 1px solid #111;
 }
 
 .search-container {
-  justify-self: end;
+    justify-self: end;
 }
 
 /* MITTLERE NAVIGATION */
 
 .header-nav {
-  display: flex;
+    display: flex;
 
-  border: 1px solid #111;
+    border: 1px solid #111;
 }
 
 .header-nav button {
-  width: 140px;
-  height: 34px;
+    width: 140px;
+    height: 34px;
 
-  background: transparent;
-  color: white;
+    background: transparent;
+    color: white;
 
-  border: none;
+    border: none;
 
-  cursor: pointer;
+    cursor: pointer;
 
-  font-size: 1rem;
+    font-size: 1rem;
 }
 
 .header-nav button:hover {
-  background-color: #111;
+    background-color: #111;
 }
 
 /* SEARCH */
 
 .search-container {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 
 .searchbar {
-  width: 230px;
+    width: 230px;
 
-  background: transparent;
-  color: white;
+    background: transparent;
+    color: white;
 
-  border: 1px solid #888;
-  border-radius: 999px;
+    border: 1px solid #888;
+    border-radius: 999px;
 
-  padding: 10px 16px;
+    padding: 10px 16px;
 
-  font-size: 1rem;
+    font-size: 1rem;
 }
 
 .searchbar::placeholder {
-  color: #ccc;
+    color: #ccc;
 }
 
 .searchbar:focus {
-  outline: none;
-  border-color: white;
+    outline: none;
+    border-color: white;
 }
 
 .feed {
-  width: 100%;
-  max-width: 780px;
-  margin: 0 auto;
+    width: 100%;
+    max-width: 780px;
+    margin: 0 auto;
 
-  border-left: 1px solid #222;
-  border-right: 1px solid #222;
+    border-left: 1px solid #222;
+    border-right: 1px solid #222;
 
-  min-height: calc(100vh - 70px);
+    min-height: calc(100vh - 70px);
 }
 
 
 .tweet-input {
-  width: 100%;
+    width: 100%;
 
-  background: transparent;
-  color: white;
+    background: transparent;
+    color: white;
 
-  border: none;
+    border: none;
 
-  font-size: 20px;
+    font-size: 20px;
 
-  outline: none;
+    outline: none;
 }
 
 .tweet-input::placeholder {
-  color: #777;
+    color: #777;
 }
 
 .info-container {
     position: fixed;
     top: 100px;
-    right: 20px;
+
+    /* Zentriert die Box in der Lücke zwischen rechter Feed-Kante und Bildschirmrand.
+       Herleitung: rechte Feed-Kante liegt bei 50vw + feed-width/2.
+       Lückenbreite = 50vw - feed-width/2.
+       Box wird in der Mitte dieser Lücke platziert. */
+    left: calc(75vw + (var(--feed-width) / 4) - (var(--info-box-width) / 2));
+    width: var(--info-box-width);
 
     display: flex;
     flex-direction: column;
@@ -171,14 +182,24 @@ main {
     z-index: 999999;
 }
 
+/* Auf schmaleren Screens ist neben dem Feed kein Platz mehr für die Lücken-Zentrierung
+   -> zurück zu einer einfachen rechten Position mit etwas Abstand zum Rand */
+@media (max-width: 1300px) {
+    .info-container {
+        left: auto;
+        right: clamp(12px, 3vw, 40px);
+        width: clamp(220px, 50vw, 320px);
+    }
+}
+
 .info-box {
-    width: 320px;
-    padding: 18px;
+    width: 100%;
+    padding: clamp(12px, 1.4vw, 18px);
 
     background: linear-gradient(
-        135deg,
-        rgba(25, 25, 25, 0.98),
-        rgba(40, 40, 40, 0.98)
+            135deg,
+            rgba(25, 25, 25, 0.98),
+            rgba(40, 40, 40, 0.98)
     );
 
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -187,23 +208,18 @@ main {
     border-radius: 16px;
 
     box-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.45),
-        0 0 20px rgba(29, 155, 240, 0.15);
+            0 10px 30px rgba(0, 0, 0, 0.45),
+            0 0 20px rgba(29, 155, 240, 0.15);
 
     color: white;
 
     backdrop-filter: blur(10px);
-
-    opacity: 0;
-    transform: scale(0.8);
 
     max-height: 80vh;
 
     overflow-wrap: anywhere;
     word-break: break-word;
     white-space: normal;
-
-    animation: popIn 0.4s ease-out forwards;
 }
 
 .info-box h3 {
@@ -245,33 +261,16 @@ main {
     box-shadow: 0 0 20px rgba(29,155,240,0.2);
 }
 
-
 .header {
     position: sticky;
     top: 0;
     z-index: 50;
 }
 
-@keyframes popIn {
-    0% {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-
-    70% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
 /* ─── Post Input Glow ──────────────────────────────────────────────────────── */
 @keyframes pulseGlow {
     0%, 100% { box-shadow: 0 0 0px rgba(29, 155, 240, 0); }
-    50%       { box-shadow: 0 0 30px rgba(29, 155, 240, 0.65); }
+    50%       { box-shadow: 0 0 10px rgba(29, 155, 240, 0.65); }
 }
 
 .post-input-glow {

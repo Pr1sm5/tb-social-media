@@ -35,8 +35,6 @@ export default function Header({ showBack = false }: HeaderProps) {
 
             {/* For you / Following als Pill-Buttons */}
             <div style={navStyle}>
-                <button style={pillBtnStyle}>For you</button>
-                <button style={pillBtnStyle}>Following</button>
             </div>
 
             {user && (

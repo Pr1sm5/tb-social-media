@@ -3,13 +3,21 @@ import { NextResponse } from "next/server";
 import { CreatePostInput } from "@/lib/types/post";
 import { Language } from "@/lib/types/bot";
 import { getPosts, createPost } from "@/lib/services/post.service";
+import { getCommentCounts } from "@/lib/services/comment.service";
 import { getAllBotComments } from "@/lib/ai/aiGenerator";
 import { scheduleFollowUpComments } from "@/lib/ai/botScheduler";
 
 // GET app/api/posts
 export async function GET() {
     const posts = getPosts();
-    return NextResponse.json({ success: true, data: posts });
+    const commentCounts = getCommentCounts();
+
+    const postsWithCommentCount = posts.map((post) => ({
+        ...post,
+        commentCount: commentCounts[post.postId] ?? 0,
+    }));
+
+    return NextResponse.json({ success: true, data: postsWithCommentCount });
 }
 
 // POST app/api/posts — Post erstellen + Bots antworten lassen (fire-and-forget)
