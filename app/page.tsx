@@ -14,11 +14,14 @@ import { Post } from "../lib/types/post";
 import { PostComment } from "@/lib/types/postComment";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
+import { INFO_EVENTS, InfoBoxItem } from "@/lib/infoTexts/infoTexts";
 
+/*
 type InfoBoxItem = {
     text: string;
     type?: "info" | "error" | "success" | "warning";
 };
+*/
 
 export default function Page() {
     const router = useRouter();
@@ -35,6 +38,7 @@ export default function Page() {
 
     useEffect(() => { fetchPosts(); }, []);
 
+/*
     function startInfoSequence(lang: "de" | "en") {
         setInfoBoxes([]);
 
@@ -52,6 +56,22 @@ export default function Page() {
 
         events.forEach(({ delay, data }) => {
             setTimeout(() => setInfoBoxes(prev => [...prev, data]), delay);
+        });
+    }
+        */
+    console.log(INFO_EVENTS);
+    function startInfoSequence(lang: "de" | "en") {
+        console.log("START", lang);
+
+        setInfoBoxes([]);
+
+        INFO_EVENTS[lang].forEach(({ delay, data }) => {
+            console.log("Scheduling:", data.text);
+
+            setTimeout(() => {
+                console.log("Showing:", data.text);
+                setInfoBoxes(prev => [...prev, data]);
+            }, delay);
         });
     }
 

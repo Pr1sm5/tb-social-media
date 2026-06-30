@@ -10,28 +10,11 @@ import Header from "@/app/components/Header";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import InfoBox from "@/app/components/InfoBox";
+import { INFO_EVENTS2, InfoBoxItem2 } from "@/lib/infoTexts/infoTexts2";
+
 
 const NEW_POST_THRESHOLD_MS = 30_000;
 
-type InfoBoxItem = {
-    text: string;
-    type?: "info" | "error" | "success" | "warning";
-};
-
-const INFO_EVENTS: Record<"de" | "en", { delay: number; data: InfoBoxItem }[]> = {
-    de: [
-        { delay: 15000, data: { text: "Durch das Erstellen deines Posts wurde etwas ausgelöst.", type: "warning" } },
-        { delay: 25000, data: { text: "Mehrere Bots kommentieren unter deinem Post.", type: "info" } },
-        { delay: 35000, data: { text: "Die Aktivität steigt ungewöhnlich schnell an.", type: "error" } },
-        { delay: 45000, data: { text: "20% aller Social-Media-Kommentare stammen von Bots. (Nature Scientific Reports, 2025)", type: "success" } },
-    ],
-    en: [
-        { delay: 15000, data: { text: "Something was triggered by creating your post.", type: "warning" } },
-        { delay: 25000, data: { text: "Multiple bots are commenting on your post.", type: "info" } },
-        { delay: 35000, data: { text: "Activity is rising unusually fast.", type: "error" } },
-        { delay: 45000, data: { text: "20% of all social media comments come from bots. (Nature Scientific Reports, 2025)", type: "success" } },
-    ],
-};
 
 function isNewPost(timestamp: string): boolean {
     return Date.now() - new Date(timestamp).getTime() < NEW_POST_THRESHOLD_MS;
@@ -59,10 +42,7 @@ function generateColor(username: string): string {
     return colors[Math.abs(hash) % colors.length];
 }
 
-type InfoBoxItem = {
-    text: string;
-    type?: "info" | "error" | "success" | "warning";
-};
+
 
 export default function PostPage() {
     const params = useParams();
@@ -105,9 +85,8 @@ export default function PostPage() {
     // Ref auf das letzte Kommentar-Element für Auto-Scroll
     const bottomRef = useRef<HTMLDivElement>(null);
 
-    // Auto-Scroll wenn neuer Kommentar sichtbar wird
     useEffect(() => {
-        if (visibleComments.length === 0) return;
+        if (visibleComments.length === 0 || !post || !isNewPost(post.timestamp)) return;
         bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }, [visibleComments.length]);
 
@@ -122,6 +101,7 @@ export default function PostPage() {
             );
             return;
         }
+
 
         setVisibleComments((prev) => {
             const visibleIds = new Set(prev.map((c) => c.commentId));
@@ -144,6 +124,9 @@ export default function PostPage() {
         });
     }, [comments, post]);
 
+
+
+
     useEffect(() => {
         if (!id) return;
         loadData(id);
@@ -165,13 +148,22 @@ export default function PostPage() {
         }
     }
 
+    console.log(INFO_EVENTS2);
     function startInfoSequence(lang: "de" | "en") {
         if (hasStarted.current) return;
         hasStarted.current = true;
+
+        console.log("START", lang);
+
         setInfoBoxes([]);
 
-        INFO_EVENTS[lang].forEach(({ delay, data }) => {
-            setTimeout(() => setInfoBoxes(prev => [...prev, data]), delay);
+        INFO_EVENTS2[lang].forEach(({ delay, data }) => {
+            console.log("Scheduling:", data.text);
+
+            setTimeout(() => {
+                console.log("Showing:", data.text);
+                setInfoBoxes(prev => [...prev, data]);
+            }, delay);
         });
     }
 
