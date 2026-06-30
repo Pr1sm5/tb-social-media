@@ -38,7 +38,7 @@ export default function Page() {
 
     useEffect(() => { fetchPosts(); }, []);
 
-
+    /*
     console.log(INFO_EVENTS);
     function startInfoSequence(lang: "de" | "en") {
         console.log("START", lang);
@@ -54,6 +54,7 @@ export default function Page() {
             }, delay);
         });
     }
+        */
 
     async function fetchPosts() {
         try {
@@ -84,7 +85,7 @@ export default function Page() {
             const data = await res.json();
             if (data.success) {
                 setPosts((prev) => [data.data, ...prev]);
-                startInfoSequence(lang);
+                //startInfoSequence(lang);
             }
         } catch (err) {
             console.error("Fehler beim Erstellen:", err);
