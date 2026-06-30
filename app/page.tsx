@@ -10,7 +10,7 @@ import LoginOverlay from "./components/LoginOverlay";
 import Header from "./components/Header";
 import InfoBox from "./components/InfoBox";
 
-import { Post } from "../lib/types/post";
+import { Post } from "@/lib/types/post";
 import { PostComment } from "@/lib/types/postComment";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
@@ -38,27 +38,7 @@ export default function Page() {
 
     useEffect(() => { fetchPosts(); }, []);
 
-/*
-    function startInfoSequence(lang: "de" | "en") {
-        setInfoBoxes([]);
 
-        const events: { delay: number; data: InfoBoxItem }[] = lang === "en" ? [
-            { delay: 15000, data: { text: "Something was triggered by creating the post.", type: "warning" } },
-            { delay: 25000, data: { text: "Multiple bots are commenting on your post.", type: "info" } },
-            { delay: 35000, data: { text: "Activity is rising unusually fast.", type: "error" } },
-            { delay: 45000, data: { text: "20% of social media traffic during global events comes from bots. (Nature, 2025)", type: "success" } },
-        ] : [
-            { delay: 15000, data: { text: "Durch das Erstellen des Posts wurde etwas ausgelöst.", type: "warning" } },
-            { delay: 25000, data: { text: "Mehrere Bots kommentieren unter deinem Post.", type: "info" } },
-            { delay: 35000, data: { text: "Die Aktivität steigt ungewöhnlich schnell an.", type: "error" } },
-            { delay: 45000, data: { text: "20% aller Social-Media-Kommentare stammen von Bots. (Nature, 2025)", type: "success" } },
-        ];
-
-        events.forEach(({ delay, data }) => {
-            setTimeout(() => setInfoBoxes(prev => [...prev, data]), delay);
-        });
-    }
-        */
     console.log(INFO_EVENTS);
     function startInfoSequence(lang: "de" | "en") {
         console.log("START", lang);
@@ -219,6 +199,7 @@ export default function Page() {
             <div className="info-container">
                 {infoBoxes.map((box, index) => (
                     <InfoBox
+                        key={`${box.text}-${box.type}-${index}`}
                         text={box.text}
                         type={box.type}
                     />
