@@ -21,7 +21,9 @@ function generateColor(username: string): string {
     return colors[Math.abs(hash) % colors.length];
 }
 
-function highlightMentions(text: string) {
+function highlightMentions(text: string | undefined | null) {
+    if (!text) return null;
+
     const parts = text.split(/(@\w+)/g);
     return parts.map((part, i) =>
         part.startsWith("@")
