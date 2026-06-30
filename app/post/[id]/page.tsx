@@ -105,9 +105,8 @@ export default function PostPage() {
     // Ref auf das letzte Kommentar-Element für Auto-Scroll
     const bottomRef = useRef<HTMLDivElement>(null);
 
-    // Auto-Scroll wenn neuer Kommentar sichtbar wird
     useEffect(() => {
-        if (visibleComments.length === 0) return;
+        if (visibleComments.length === 0 || !post || !isNewPost(post.timestamp)) return;
         bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }, [visibleComments.length]);
 
@@ -122,6 +121,7 @@ export default function PostPage() {
             );
             return;
         }
+
 
         setVisibleComments((prev) => {
             const visibleIds = new Set(prev.map((c) => c.commentId));
@@ -143,6 +143,9 @@ export default function PostPage() {
             return prev;
         });
     }, [comments, post]);
+
+
+
 
     useEffect(() => {
         if (!id) return;
