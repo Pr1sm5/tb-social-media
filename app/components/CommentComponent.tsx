@@ -32,6 +32,20 @@ function highlightMentions(text: string) {
     );
 }
 
+function formatTimeAgo(timestamp: string): string {
+    const diffMs = Date.now() - new Date(timestamp).getTime();
+    const diffMin = Math.floor(diffMs / 60_000);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    if (diffMin < 1) return "jetzt";
+    if (diffMin < 60) return `${diffMin}m`;
+    if (diffHour < 24) return `${diffHour}h`;
+    if (diffDay < 7) return `${diffDay}d`;
+
+    return new Date(timestamp).toLocaleDateString("de-DE", { day: "2-digit", month: "short" });
+}
+
 type CommentProps = {
     comments: PostComment[];
     onAddComment: (text: string) => void;
@@ -58,14 +72,10 @@ export default function CommentComponent({ comments, onAddComment, onDeleteComme
 
                         <p style={text}>{highlightMentions(c.content)}</p>
 
-                        <div style={actionsStyle}>
-                            <button className="icon-btn comment" onClick={(e) => e.stopPropagation()}>💬</button>
-                            <button className="icon-btn like" onClick={(e) => e.stopPropagation()}>❤️</button>
-                            <button
-                                className="icon-btn delete"
-                                onClick={(e) => { e.stopPropagation(); onDeleteComment(c.commentId); }}
-                            >🗑</button>
+                        <div style={timeRowStyle}>
+                            <span style={timestampStyle}>{formatTimeAgo(c.timestamp)}</span>
                         </div>
+
                     </div>
                 ))}
             </div>
@@ -103,6 +113,8 @@ const topRow: React.CSSProperties         = { display: "flex", alignItems: "cent
 const name: React.CSSProperties           = { fontWeight: 600, color: "white" };
 const handle: React.CSSProperties         = { fontSize: "12px", color: "#888" };
 const text: React.CSSProperties           = { color: "#ddd", margin: 0 };
+const timeRowStyle: React.CSSProperties   = { display: "flex", justifyContent: "flex-end" };
+const timestampStyle: React.CSSProperties = { fontSize: "12px", color: "#666" };
 const actionsStyle: React.CSSProperties   = { display: "flex", gap: "4px", marginTop: "5px" };
 const pillBtnStyle: React.CSSProperties = {
     padding: "6px 18px",

@@ -32,7 +32,7 @@ export function getCommentsByPostId(postId : string): PostComment[]{
     const comments: PostComment[] = loadComments()
         .filter(c => c.postId === postId)
         .sort((a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     return comments
 }
 
@@ -87,4 +87,18 @@ export function getCommentById(commentId: string): PostComment | null{
     if (!comment) return null
 
     return comment
+}
+
+/**
+ * Liefert ein Mapping postId -> Anzahl Kommentare.
+ * Liest die Kommentar-Datei nur EINMAL (statt pro Post), effizient für Listen-Views.
+ */
+export function getCommentCounts(): Record<string, number> {
+    const counts: Record<string, number> = {};
+
+    for (const comment of loadComments()) {
+        counts[comment.postId] = (counts[comment.postId] ?? 0) + 1;
+    }
+
+    return counts;
 }

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Post } from "@/lib/types/post";
 import { PostComment } from "@/lib/types/postComment";
 import TextOutputComponent from "@/app/components/TextOutputComponent";
 import CommentComponent from "@/app/components/CommentComponent";
 import LoginOverlay from "@/app/components/LoginOverlay";
 import Header from "@/app/components/Header";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import InfoBox from "@/app/components/InfoBox";
 import { INFO_EVENTS2, InfoBoxItem2 } from "@/lib/infoTexts/infoTexts2";
@@ -46,6 +47,7 @@ function generateColor(username: string): string {
 
 export default function PostPage() {
     const params = useParams();
+    const router = useRouter();
     const { user, login, ready } = useUser();
 
     // Ref damit addComment immer die aktuelle Sprache liest — nie stale
@@ -61,10 +63,24 @@ export default function PostPage() {
     const [commentInput, setCommentInput] = useState("");
     const [showInfoBox, setShowInfoBox] = useState(false);
     type InfoBoxItem = {
+        id: string;
         text: string;
         type?: "info" | "error" | "success" | "warning";
     };
     const [infoBoxes, setInfoBoxes] = useState<InfoBoxItem[]>([]);
+
+    // Wie lange eine Box sichtbar bleibt, bevor sie entfernt wird
+    // (das Fade-/Slide-Out beim Entfernen übernimmt automatisch AnimatePresence)
+    const INFO_BOX_VISIBLE_MS = 8000;
+
+    function addInfoBox(data: { text: string; type?: InfoBoxItem["type"] }) {
+        const boxId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        setInfoBoxes((prev) => [...prev, { id: boxId, ...data }]);
+
+        setTimeout(() => {
+            setInfoBoxes((prev) => prev.filter((b) => b.id !== boxId));
+        }, INFO_BOX_VISIBLE_MS);
+    }
     const [footerShake, setFooterShake] = useState(false);
     const [showBanner, setShowBanner] = useState(false);
 
@@ -84,12 +100,28 @@ export default function PostPage() {
 
     // Ref auf das letzte Kommentar-Element für Auto-Scroll
     const bottomRef = useRef<HTMLDivElement>(null);
+    // Eigener Zähler für den Scroll-Effect, getrennt vom Shake-Tracking oben
+    const prevVisibleCountForScroll = useRef(0);
 
-    // Auto-Scroll wenn neuer Kommentar sichtbar wird
     useEffect(() => {
-        if (visibleComments.length === 0) return;
-        bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }, [visibleComments.length]);
+        if (visibleComments.length === 0 || !post) return;
+
+        const prevCount = prevVisibleCountForScroll.current;
+        const hasNewComments = visibleComments.length > prevCount;
+
+        // Neuer Post: immer scrollen, auch beim allerersten Reveal (Reveal-Animation soll sichtbar bleiben)
+        // Alter Post: nur scrollen wenn WIRKLICH neue Kommentare dazukommen,
+        // nicht beim initialen Laden der vorhandenen Kommentare (prevCount === 0)
+        const shouldScroll = isNewPost(post.timestamp)
+            ? hasNewComments
+            : hasNewComments && prevCount > 0;
+
+        if (shouldScroll) {
+            bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+
+        prevVisibleCountForScroll.current = visibleComments.length;
+    }, [visibleComments.length, post]);
 
     useEffect(() => {
         if (comments.length === 0) return;
@@ -102,6 +134,7 @@ export default function PostPage() {
             );
             return;
         }
+
 
         setVisibleComments((prev) => {
             const visibleIds = new Set(prev.map((c) => c.commentId));
@@ -123,6 +156,9 @@ export default function PostPage() {
             return prev;
         });
     }, [comments, post]);
+
+
+
 
     useEffect(() => {
         if (!id) return;
@@ -159,7 +195,7 @@ export default function PostPage() {
 
             setTimeout(() => {
                 console.log("Showing:", data.text);
-                setInfoBoxes(prev => [...prev, data]);
+                addInfoBox(data);
             }, delay);
         });
     }
@@ -240,6 +276,7 @@ export default function PostPage() {
                                 name={post.userId}
                                 username={post.userId}
                                 onDelete={() => {}}
+                                timestamp={post.timestamp}
                             />
 
                             <CommentComponent
@@ -257,18 +294,34 @@ export default function PostPage() {
             </main>
 
             <div className="info-container">
-                {infoBoxes.map((box, index) => (
-                    <InfoBox
-                        key={`${box.text}-${box.type}-${index}`}
-                        text={box.text}
-                        type={box.type}
-                    />
-                ))}
+                <AnimatePresence>
+                    {infoBoxes.map((box) => (
+                        <motion.div
+                            key={box.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, x: 40 }}
+                            transition={{ duration: 0.4, ease: "easeInOut" }}
+                        >
+                            <InfoBox text={box.text} type={box.type} />
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
             </div>
 
             {/* Sticky Footer — mit Shake-Animation bei neuem Kommentar */}
             <div style={footerStyle} className={footerShake ? "footer-shake" : ""}>
                 <div style={footerInnerStyle}>
+                    <button
+                        className="send-btn"
+                        style={readMoreBtnStyle}
+                        onClick={() => router.push("/read-more")}
+                        title={lang === "en" ? "Read more" : "Mehr erfahren"}
+                    >
+                        ℹ️
+                    </button>
+
                     {user && (
                         <div style={{
                             width: "32px", height: "32px", borderRadius: "50%",
@@ -355,5 +408,22 @@ const pillBtnStyle: React.CSSProperties = {
     color: "white",
     fontSize: "14px",
     cursor: "pointer",
+    transition: "background 0.15s ease, border-color 0.15s ease",
+};
+
+const readMoreBtnStyle: React.CSSProperties = {
+    width: "36px",
+    height: "36px",
+    padding: 0,
+    borderRadius: "50%",
+    border: "1px solid #333",
+    background: "transparent",
+    color: "white",
+    fontSize: "16px",
+    cursor: "pointer",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     transition: "background 0.15s ease, border-color 0.15s ease",
 };
