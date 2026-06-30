@@ -7,6 +7,7 @@ type TextOutputProps = {
     onDelete: () => void;
     avatarComponent?: ReactNode;
     commentCount?: number;
+    timestamp?: string;
 };
 
 function generateColor(username: string): string {
@@ -32,6 +33,20 @@ function highlightMentions(text: string | undefined | null) {
     );
 }
 
+function formatTimeAgo(timestamp: string): string {
+    const diffMs = Date.now() - new Date(timestamp).getTime();
+    const diffMin = Math.floor(diffMs / 60_000);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    if (diffMin < 1) return "jetzt";
+    if (diffMin < 60) return `${diffMin}m`;
+    if (diffHour < 24) return `${diffHour}h`;
+    if (diffDay < 7) return `${diffDay}d`;
+
+    return new Date(timestamp).toLocaleDateString("de-DE", { day: "2-digit", month: "short" });
+}
+
 function InitialsAvatar({ username }: { username: string }) {
     return (
         <div style={{
@@ -52,7 +67,7 @@ function InitialsAvatar({ username }: { username: string }) {
     );
 }
 
-export default function TextOutputComponent({ text, name, username, onDelete, avatarComponent, commentCount = 0 }: TextOutputProps) {
+export default function TextOutputComponent({ text, name, username, onDelete, avatarComponent, commentCount = 0, timestamp }: TextOutputProps) {
     return (
         <div style={containerStyle} className="post-card">
 
@@ -70,6 +85,7 @@ export default function TextOutputComponent({ text, name, username, onDelete, av
                 <button className="icon-btn comment">
                     💬 {commentCount > 0 && <span style={countStyle}>{commentCount}</span>}
                 </button>
+                {timestamp && <span style={timestampStyle}>{formatTimeAgo(timestamp)}</span>}
             </div>
 
         </div>
@@ -99,8 +115,16 @@ const textStyle: React.CSSProperties      = { margin: 0 };
 
 const actionsStyle: React.CSSProperties = {
     display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: "4px",
     marginTop: "10px",
+};
+
+const timestampStyle: React.CSSProperties = {
+    fontSize: "13px",
+    color: "#666",
+    flexShrink: 0,
 };
 
 const countStyle: React.CSSProperties = {
