@@ -71,7 +71,7 @@ export default function PostPage() {
 
     // Wie lange eine Box sichtbar bleibt, bevor sie entfernt wird
     // (das Fade-/Slide-Out beim Entfernen übernimmt automatisch AnimatePresence)
-    const INFO_BOX_VISIBLE_MS = 8000;
+    const INFO_BOX_VISIBLE_MS = 12000;
 
     function addInfoBox(data: { text: string; type?: InfoBoxItem["type"] }) {
         const boxId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -319,7 +319,7 @@ export default function PostPage() {
                         onClick={() => router.push("/read-more")}
                         title={lang === "en" ? "Read more" : "Mehr erfahren"}
                     >
-                        ℹ️
+                        i
                     </button>
 
                     {user && (
