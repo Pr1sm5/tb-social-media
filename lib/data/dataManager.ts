@@ -9,38 +9,67 @@ const commentsFilePath = path.join(process.cwd(), "data", "comments.json");
 const postsFilePath = path.join(process.cwd(), "data", "posts.json");
 const botsFilePath = path.join(process.cwd(), "data", "bots.json");
 
-//const postsFilePath: string = "data/posts.json";
-//const commentsFilePath: string = "data/comments.json";
-//const botsFilePath: string = "data/bots.json";
+// Liest eine JSON-Datei robust ein. Fehlt die Datei, wird sie mit "[]" angelegt.
+// Ist der Inhalt kein valides JSON (z.B. durch manuelles Editieren kaputt gegangen),
+// wird die defekte Datei gesichert und ein leeres Array zurückgegeben, statt die App abstürzen zu lassen.
+function safeReadJsonArray<T>(filePath: string): T[] {
+    try {
+        if (!fs.existsSync(filePath)) {
+            fs.writeFileSync(filePath, "[]");
+        }
+
+        const raw = fs.readFileSync(filePath, "utf-8");
+
+        if (!raw.trim()) return [];
+
+        const parsed = JSON.parse(raw);
+
+        if (!Array.isArray(parsed)) {
+            console.error(`[dataManager] ${filePath} enthält kein Array — verwende leeres Array.`);
+            return [];
+        }
+
+        return parsed as T[];
+    } catch (err) {
+        console.error(`[dataManager] Konnte ${filePath} nicht lesen/parsen:`, err);
+
+        try {
+            const backupPath = `${filePath}.corrupted-${Date.now()}.bak`;
+            fs.copyFileSync(filePath, backupPath);
+            console.error(`[dataManager] Defekte Datei gesichert unter ${backupPath}`);
+        } catch {
+            // Backup ist best-effort — wenn das auch fehlschlägt, trotzdem sauber weitermachen
+        }
+
+        return [];
+    }
+}
+
+function safeWriteJsonArray<T>(filePath: string, data: T[]): boolean {
+    try {
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        return true;
+    } catch (err) {
+        console.error(`[dataManager] Konnte ${filePath} nicht schreiben:`, err);
+        return false;
+    }
+}
 
 
 //region POSTS
 
-//function loadPosts(): Post[]{
-//   const data = fs.readFileSync(postsFilePath, "utf-8")
-//    return JSON.parse(data || "[]")
-//}
-
 function loadPosts(): Post[] {
-    if (!fs.existsSync(postsFilePath)) {
-        fs.writeFileSync(postsFilePath, "[]");
-    }
-
-    const data = fs.readFileSync(postsFilePath, "utf-8");
-
-    return data.trim()
-        ? JSON.parse(data)
-        : [];
+    return safeReadJsonArray<Post>(postsFilePath);
 }
 
-export function savePosts(posts: Post[]){
-   fs.writeFileSync(postsFilePath, JSON.stringify(posts, null, 2))
+export function savePosts(posts: Post[]): boolean {
+    return safeWriteJsonArray(postsFilePath, posts);
 }
 
-export function savePost(post: Post){
+export function savePost(post: Post): boolean {
     const posts = loadPosts()
     posts.push(post)
-    savePosts(posts)
+    return savePosts(posts)
 }
 
 export function getPosts(): Post[]{
@@ -50,52 +79,29 @@ export function getPosts(): Post[]{
 
 //region Comments
 
-//function loadComments(): PostComment[]{
-//    const data = fs.readFileSync(commentsFilePath, "utf-8")
-//    return JSON.parse(data || "[]")
-//}
-
 function loadComments(): PostComment[] {
-    if (!fs.existsSync(commentsFilePath)) {
-        fs.writeFileSync(commentsFilePath, "[]");
-    }
-
-    const data = fs.readFileSync(commentsFilePath, "utf-8");
-
-    //console.log("COMMENTS RAW FILE:", data); //Bug fixing
-
-    return data.trim()
-        ? JSON.parse(data)
-        : [];
+    return safeReadJsonArray<PostComment>(commentsFilePath);
 }
 
-export function saveComments(comments: PostComment[]){
-    fs.writeFileSync(commentsFilePath, JSON.stringify(comments, null, 2))
+export function saveComments(comments: PostComment[]): boolean {
+    return safeWriteJsonArray(commentsFilePath, comments);
 }
 
 export function getComments(): PostComment[]{
     return loadComments()
 }
 
-export function saveComment(comment: PostComment){
+export function saveComment(comment: PostComment): boolean {
     const comments = loadComments()
     comments.push(comment)
-    saveComments(comments)
+    return saveComments(comments)
 }
 //endregion
 
 
 //region Bots
 export function loadBots() : Bot[]{
-    if (!fs.existsSync(botsFilePath)){
-        fs.writeFileSync(botsFilePath, "[]")
-    }
-
-    const data = fs.readFileSync(botsFilePath, "utf-8")
-
-    return data.trim()
-        ? JSON.parse(data)
-        : [];
+    return safeReadJsonArray<Bot>(botsFilePath);
 }
 
 //endregion

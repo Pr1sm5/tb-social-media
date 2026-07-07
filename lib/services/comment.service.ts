@@ -12,6 +12,13 @@ const comment: CreateCommentInput = {
 
 
 
+// Liefert einen sortierbaren Zeitwert; ungültige/fehlende Timestamps landen ans Ende
+// statt die Sortierung mit NaN durcheinanderzubringen.
+function safeTimestamp(value: unknown): number {
+    const time = new Date(value as string).getTime()
+    return Number.isNaN(time) ? 0 : time
+}
+
 export function createComment(input : CreateCommentInput): PostComment | null{
     const comment: PostComment = {
         postId: input.postId,
@@ -23,7 +30,10 @@ export function createComment(input : CreateCommentInput): PostComment | null{
         botType : input.botType
     }
 
-    saveComment(comment)
+    if (!saveComment(comment)) {
+        return null;
+    }
+
     return comment
 }
 
@@ -31,8 +41,7 @@ export function createComment(input : CreateCommentInput): PostComment | null{
 export function getCommentsByPostId(postId : string): PostComment[]{
     const comments: PostComment[] = loadComments()
         .filter(c => c.postId === postId)
-        .sort((a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .sort((a, b) => safeTimestamp(a.timestamp) - safeTimestamp(b.timestamp))
     return comments
 }
 
