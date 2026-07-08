@@ -8,8 +8,14 @@ export async function scheduleFollowUpComments(
     delayMs: number = 45_000,
     language: Language = "de"
 ) {
-    setTimeout(async () => {
-        const existingComments = getCommentsByPostId(post.postId);
-        await getCommentsForPostAndComments(post, existingComments, 3, language);
+    setTimeout(() => {
+        void (async () => {
+            try {
+                const existingComments = getCommentsByPostId(post.postId);
+                await getCommentsForPostAndComments(post, existingComments, 3, language);
+            } catch (err) {
+                console.error("Follow-up Bot-Kommentare fehlgeschlagen:", err);
+            }
+        })();
     }, delayMs);
 }

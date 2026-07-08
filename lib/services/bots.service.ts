@@ -18,15 +18,17 @@ export function getRandomBotByType(botType : string) : Bot | undefined{
     const data = getBots()
     const filtered = data.filter(b => b.botType === botType)
 
-    const randomIndex = Math.floor(Math.random() * filtered.length)
-    const randomBot = filtered[randomIndex]
+    if (filtered.length === 0) return undefined
 
-    return randomBot
+    const randomIndex = Math.floor(Math.random() * filtered.length)
+    return filtered[randomIndex]
 }
 
 
-export function getRandomBot() : Bot{
+export function getRandomBot() : Bot | undefined{
     const data = getBots()
+
+    if (data.length === 0) return undefined
 
     const randomIndex = Math.floor(Math.random() * data.length)
     return data[randomIndex]

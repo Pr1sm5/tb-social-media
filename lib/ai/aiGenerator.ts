@@ -6,9 +6,44 @@ import { PostComment } from "@/lib/types/postComment";
 import { createComment } from "@/lib/services/comment.service";
 import { getRandomBot } from "@/lib/services/bots.service";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent";
+
+// Mehrere Keys erlauben (GEMINI_API_KEYS, kommagetrennt) — fällt auf den
+// einzelnen GEMINI_API_KEY zurück, falls nur einer gesetzt ist. Bei mehreren
+// gleichzeitigen Nutzern (z.B. auf dem Uni-Server) verteilt sich die Last so
+// auf mehrere Kontingente, und ein überlasteter/rate-limitierter Key blockiert
+// nicht die ganze Seite.
+function loadApiKeys(): string[] {
+    const keys = (process.env.GEMINI_API_KEYS ?? process.env.GEMINI_API_KEY ?? "")
+        .split(/[,\n]/)
+        .map((k) => k.trim())
+        .filter(Boolean);
+
+    if (keys.length === 0) {
+        throw new Error(
+            "Kein Gemini API Key konfiguriert. Bitte GEMINI_API_KEY oder GEMINI_API_KEYS (kommagetrennt) setzen."
+        );
+    }
+
+    return keys;
+}
+
+const API_KEYS = loadApiKeys();
+
+// Rotierender Startpunkt: jede neue Anfrage beginnt mit dem nächsten Key,
+// damit gleichzeitige Requests verschiedener Nutzer sich gleichmäßig verteilen.
+let keyCursor = 0;
+
+function rotatedKeyOrder(): string[] {
+    const start = keyCursor % API_KEYS.length;
+    keyCursor = (keyCursor + 1) % API_KEYS.length;
+    return [...API_KEYS.slice(start), ...API_KEYS.slice(0, start)];
+}
+
+function maskKey(key: string): string {
+    return key.length <= 6 ? "***" : `${key.slice(0, 3)}…${key.slice(-3)}`;
+}
 
 // ─────────────────────────────────────────────
 // Typen
@@ -120,59 +155,111 @@ function isSafetyBlocked(data: any): boolean {
     return reason === "SAFETY" || reason === "RECITATION" || reason === "OTHER";
 }
 
-async function callGemini(prompt: string, retryCount = 0): Promise<string> {
-    const MAX_RETRIES = 3;
+type GeminiAttemptResult =
+    | { ok: true; text: string }
+    | { ok: false; retryable: true; message: string; retryDelayMs?: number }
+    | { ok: false; retryable: false; message: string };
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: {
-                temperature: 1.0,
-                maxOutputTokens: 4096,
-            },
-        }),
-    });
+// Ein einzelner Versuch mit genau einem Key. "retryable" heißt: nächster Key
+// (oder nächste Runde) darf es versuchen — z.B. Rate-Limit, Overload, Safety-Block,
+// leere Antwort oder Netzwerkfehler. "retryable: false" heißt: der Fehler liegt
+// nicht am Key/der Auslastung (z.B. 400 Bad Request) — sofort abbrechen.
+async function tryGeminiKey(prompt: string, apiKey: string): Promise<GeminiAttemptResult> {
+    let response: Response;
+
+    try {
+        response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 1.0,
+                    maxOutputTokens: 4096,
+                },
+            }),
+        });
+    } catch (err) {
+        return {
+            ok: false,
+            retryable: true,
+            message: `Netzwerkfehler: ${err instanceof Error ? err.message : String(err)}`,
+        };
+    }
 
     if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         const message: string = error?.error?.message ?? response.statusText;
 
-        if (response.status === 429 && retryCount < MAX_RETRIES) {
-            const delay = parseRetryDelay(message);
-            if (delay) {
-                console.warn(`Gemini Rate-Limit. Warte ${delay / 1000}s... (Versuch ${retryCount + 1}/${MAX_RETRIES})`);
-                await new Promise((resolve) => setTimeout(resolve, delay));
-                return callGemini(prompt, retryCount + 1);
-            }
+        // 429 = Rate-Limit, 5xx = Server überlastet/down — beides key-spezifisch,
+        // ein anderer Key hat evtl. noch Kontingent frei.
+        if (response.status === 429) {
+            return { ok: false, retryable: true, message, retryDelayMs: parseRetryDelay(message) ?? undefined };
+        }
+        if (response.status >= 500) {
+            return { ok: false, retryable: true, message };
         }
 
-        throw new Error(`Gemini API Fehler: ${message}`);
+        return { ok: false, retryable: false, message };
     }
 
     const data = await response.json();
 
     if (isSafetyBlocked(data)) {
-        console.warn(`Gemini Safety-Block (Versuch ${retryCount + 1}/${MAX_RETRIES}). finishReason:`, data?.candidates?.[0]?.finishReason);
-
-        if (retryCount < MAX_RETRIES) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            return callGemini(prompt, retryCount + 1);
-        }
-
-        throw new Error("Gemini hat die Antwort aus Safety-Gründen blockiert.");
+        return {
+            ok: false,
+            retryable: true,
+            message: `Safety-Block (finishReason: ${data?.candidates?.[0]?.finishReason})`,
+        };
     }
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-    if (!text.trim() && retryCount < MAX_RETRIES) {
-        console.warn(`Gemini leere Antwort (Versuch ${retryCount + 1}/${MAX_RETRIES}). Erneuter Versuch...`);
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return callGemini(prompt, retryCount + 1);
+    if (!text.trim()) {
+        return { ok: false, retryable: true, message: "Leere Antwort" };
     }
 
-    return text;
+    return { ok: true, text };
+}
+
+async function callGemini(prompt: string, round = 0): Promise<string> {
+    const MAX_ROUNDS = 3;
+    const keys = rotatedKeyOrder();
+
+    let lastMessage = "unbekannter Fehler";
+    let suggestedDelayMs: number | null = null;
+
+    for (let i = 0; i < keys.length; i++) {
+        const apiKey = keys[i];
+        const result = await tryGeminiKey(prompt, apiKey);
+
+        if (result.ok) return result.text;
+
+        lastMessage = result.message;
+
+        //if (!result.retryable) {
+        //    throw new Error(`Gemini API Fehler: ${result.message}`);
+        //}
+
+        console.warn(
+            `Gemini Key ${maskKey(apiKey)} fehlgeschlagen (${result.message}).` +
+            (i < keys.length - 1 ? " Versuche nächsten Key..." : "")
+        );
+
+       // if (result.retryDelayMs) suggestedDelayMs = result.retryDelayMs;
+    }
+
+    // Alle Keys in dieser Runde ausgeschöpft — kurz warten und erneut probieren.
+    if (round < MAX_ROUNDS) {
+        const delay = suggestedDelayMs ?? 1000 * (round + 1);
+        console.warn(
+            `Alle ${keys.length} Gemini-Key(s) ausgelastet. Warte ${delay / 1000}s (Runde ${round + 1}/${MAX_ROUNDS})...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return callGemini(prompt, round + 1);
+    }
+
+    throw new Error(`Gemini API Fehler nach ${MAX_ROUNDS} Runden über alle Keys: ${lastMessage}`);
 }
 
 function parseAndSave(raw: string, postId: string): BotResponse[] {
@@ -360,7 +447,7 @@ ${t.posted(userPost.userId)}
 ${t.threadHeader}
 ${commentThread || t.threadEmpty}
 
-${t.threadRules}
+ ${t.threadRules}
 
 ${t.threadExamples}
 

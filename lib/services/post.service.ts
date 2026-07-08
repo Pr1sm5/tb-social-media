@@ -14,11 +14,16 @@ const post : CreatePostInput = {
 }
 
 
+// Liefert einen sortierbaren Zeitwert; ungültige/fehlende Timestamps landen ans Ende
+// statt die Sortierung mit NaN durcheinanderzubringen.
+function safeTimestamp(value: unknown): number {
+    const time = new Date(value as string).getTime()
+    return Number.isNaN(time) ? 0 : time
+}
+
 export function getPosts(): Post[] {
     return loadPosts()
-        .sort(
-            (a, b) =>
-                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .sort((a, b) => safeTimestamp(b.timestamp) - safeTimestamp(a.timestamp))
 }
 
 
@@ -28,7 +33,10 @@ export function createPost(input : CreatePostInput): Post {
         ...input,
         timestamp: new Date().toISOString(),
     }
-    savePost(post)
+
+    if (!savePost(post)) {
+        throw new Error("Post konnte nicht gespeichert werden");
+    }
 
     return post
 }

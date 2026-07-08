@@ -277,6 +277,7 @@ export default function PostPage() {
                                 username={post.userId}
                                 onDelete={() => {}}
                                 timestamp={post.timestamp}
+                                commentCount={comments.length}
                             />
 
                             <CommentComponent

@@ -5,21 +5,29 @@ export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params;
+    try {
+        const { id } = await params;
 
-    const post = getPostById(id);
+        const post = getPostById(id);
 
-    if (!post) {
+        if (!post) {
+            return NextResponse.json(
+                { success: false, error: "Post nicht gefunden" },
+                { status: 404 }
+            );
+        }
+
         return NextResponse.json({
-            success: false,
-            error: "Post nicht gefunden"
+            success: true,
+            data: post
         });
+    } catch (error) {
+        console.error("GET /api/posts/[id] fehlgeschlagen:", error);
+        return NextResponse.json(
+            { success: false, error: "Post konnte nicht geladen werden" },
+            { status: 500 }
+        );
     }
-
-    return NextResponse.json({
-        success: true,
-        data: post
-    });
 }
 
 export async function PATCH(
@@ -27,40 +35,65 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
-    const body = await req.json();
 
-    const updated = updatePost(id, body);
-
-    if (!updated) {
-        return NextResponse.json({
-            success: false,
-            error: "Post nicht gefunden"
-        });
+    let body: Record<string, unknown>;
+    try {
+        body = await req.json();
+    } catch {
+        return NextResponse.json(
+            { success: false, error: "Ungültiger Request-Body (kein valides JSON)" },
+            { status: 400 }
+        );
     }
 
-    return NextResponse.json({
-        success: true,
-        data: updated
-    });
+    try {
+        const updated = updatePost(id, body);
+
+        if (!updated) {
+            return NextResponse.json(
+                { success: false, error: "Post nicht gefunden" },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json({
+            success: true,
+            data: updated
+        });
+    } catch (error) {
+        console.error("PATCH /api/posts/[id] fehlgeschlagen:", error);
+        return NextResponse.json(
+            { success: false, error: "Post konnte nicht aktualisiert werden" },
+            { status: 500 }
+        );
+    }
 }
 
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params;
+    try {
+        const { id } = await params;
 
-    const deleted = deletePost(id);
+        const deleted = deletePost(id);
 
-    if (!deleted) {
+        if (!deleted) {
+            return NextResponse.json(
+                { success: false, error: "Post nicht gefunden" },
+                { status: 404 }
+            );
+        }
+
         return NextResponse.json({
-            success: false,
-            error: "Post nicht gefunden"
+            success: true,
+            message: "Post gelöscht"
         });
+    } catch (error) {
+        console.error("DELETE /api/posts/[id] fehlgeschlagen:", error);
+        return NextResponse.json(
+            { success: false, error: "Post konnte nicht gelöscht werden" },
+            { status: 500 }
+        );
     }
-
-    return NextResponse.json({
-        success: true,
-        message: "Post gelöscht"
-    });
 }
