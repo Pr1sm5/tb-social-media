@@ -237,16 +237,16 @@ async function callGemini(prompt: string, round = 0): Promise<string> {
 
         lastMessage = result.message;
 
-        if (!result.retryable) {
-            throw new Error(`Gemini API Fehler: ${result.message}`);
-        }
+        //if (!result.retryable) {
+        //    throw new Error(`Gemini API Fehler: ${result.message}`);
+        //}
 
         console.warn(
             `Gemini Key ${maskKey(apiKey)} fehlgeschlagen (${result.message}).` +
             (i < keys.length - 1 ? " Versuche nächsten Key..." : "")
         );
 
-        if (result.retryDelayMs) suggestedDelayMs = result.retryDelayMs;
+       // if (result.retryDelayMs) suggestedDelayMs = result.retryDelayMs;
     }
 
     // Alle Keys in dieser Runde ausgeschöpft — kurz warten und erneut probieren.
